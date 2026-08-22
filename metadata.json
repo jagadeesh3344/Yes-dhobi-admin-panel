@@ -1,0 +1,6 @@
+{
+  "name": "Yes Dhobi Admin Portal",
+  "description": "Comprehensive real-time laundry operations, order tracking, partner fleet, customer and back-office management console for Yes Dhobi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
