@@ -73,17 +73,17 @@ export default function Revenue() {
       </div>
 
       {/* Period Selector Tabs */}
-      <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
         <div className="flex items-center text-xs font-bold text-slate-700">
-          <Calendar className="h-4 w-4 mr-2 text-blue-600" />
-          Filter Period:
+          <Calendar className="h-4 w-4 mr-2 text-blue-600 shrink-0" />
+          <span>Filter Financial Period:</span>
         </div>
-        <div className="flex space-x-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Button
             variant={period === 'today' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setPeriod('today')}
-            className="text-xs h-8 font-semibold"
+            className="text-xs h-8 font-semibold flex-1 sm:flex-initial"
           >
             Today
           </Button>
@@ -91,7 +91,7 @@ export default function Revenue() {
             variant={period === 'week' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setPeriod('week')}
-            className="text-xs h-8 font-semibold"
+            className="text-xs h-8 font-semibold flex-1 sm:flex-initial"
           >
             This Week
           </Button>
@@ -99,7 +99,7 @@ export default function Revenue() {
             variant={period === 'month' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setPeriod('month')}
-            className="text-xs h-8 font-semibold"
+            className="text-xs h-8 font-semibold flex-1 sm:flex-initial"
           >
             This Month
           </Button>
@@ -107,7 +107,7 @@ export default function Revenue() {
             variant={period === 'all' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setPeriod('all')}
-            className="text-xs h-8 font-semibold"
+            className="text-xs h-8 font-semibold flex-1 sm:flex-initial"
           >
             Full Year
           </Button>

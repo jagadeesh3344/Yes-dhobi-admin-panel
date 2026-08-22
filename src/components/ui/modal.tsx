@@ -46,7 +46,7 @@ export const Modal: React.FC<ModalProps> = ({
   }[maxWidth];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-gray-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
@@ -55,19 +55,19 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Dialog */}
       <div
-        className={`relative w-full ${maxWidthClass} bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-10 my-8 animate-in zoom-in-95 duration-150`}
+        className={`relative w-full ${maxWidthClass} bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-10 my-4 sm:my-8 animate-in zoom-in-95 duration-150`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-gray-100 bg-gray-50/50">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 leading-snug">{title}</h3>
+        <div className="flex items-start justify-between p-4 sm:p-5 border-b border-gray-100 bg-gray-50/50">
+          <div className="pr-2">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug">{title}</h3>
             {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -75,13 +75,13 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-5 max-h-[75vh] overflow-y-auto space-y-4 text-sm text-gray-700">
+        <div className="p-4 sm:p-5 max-h-[80vh] sm:max-h-[75vh] overflow-y-auto space-y-4 text-xs sm:text-sm text-gray-700">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-100 bg-gray-50/80">
+          <div className="flex items-center justify-end gap-2 sm:gap-3 p-3 sm:p-4 border-t border-gray-100 bg-gray-50/80">
             {footer}
           </div>
         )}

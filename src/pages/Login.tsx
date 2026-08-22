@@ -44,45 +44,56 @@ export default function Login() {
       </div>
       
       {/* Right side login form */}
-      <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-24">
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-12 lg:px-24 py-8">
         <div className="w-full max-w-sm mx-auto">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign In to Admin</h2>
-            <p className="text-gray-500">Enter your corporate credentials to access the back-office dashboard</p>
+          {/* Mobile brand header */}
+          <div className="flex items-center space-x-2.5 mb-8 lg:hidden">
+            <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-600/20">
+              <WashingMachine className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-xl tracking-tight text-slate-900">Yes Dhobi</h1>
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Operations Console</p>
+            </div>
+          </div>
+
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-1.5 sm:mb-2">Sign In to Admin</h2>
+            <p className="text-xs sm:text-sm text-slate-500">Enter your corporate credentials to access the back-office dashboard</p>
           </div>
           
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-900">Work Email Address</label>
-              <Input type="email" placeholder="admin@yesdhobi.com" defaultValue="admin@yesdhobi.com" className="h-11" required />
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-bold text-slate-900">Work Email Address</label>
+              <Input type="email" placeholder="admin@yesdhobi.com" defaultValue="admin@yesdhobi.com" className="h-10 sm:h-11 text-xs sm:text-sm" required />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-900">Password</label>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:underline">Forgot Password?</a>
+                <label className="text-xs sm:text-sm font-bold text-slate-900">Password</label>
+                <a href="#" className="text-xs sm:text-sm font-semibold text-blue-600 hover:underline">Forgot Password?</a>
               </div>
               <div className="relative">
-                <Input type="password" placeholder="••••••••••••••••" defaultValue="password123" className="h-11 pr-10" required />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <Input type="password" placeholder="••••••••••••••••" defaultValue="password123" className="h-10 sm:h-11 pr-10 text-xs sm:text-sm" required />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                   <EyeOff className="h-4 w-4" />
                 </button>
               </div>
             </div>
             
             <div className="flex items-center space-x-2">
-              <input type="checkbox" id="remember" className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600" defaultChecked />
-              <label htmlFor="remember" className="text-sm text-gray-600">Keep me signed in on this device</label>
+              <input type="checkbox" id="remember" className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" defaultChecked />
+              <label htmlFor="remember" className="text-xs sm:text-sm text-slate-600 font-medium">Keep me signed in on this device</label>
             </div>
             
-            <Button type="submit" className="w-full h-11 text-base bg-[#3B5BFF] hover:bg-blue-700">
+            <Button type="submit" className="w-full h-10 sm:h-11 text-sm sm:text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20">
               Access Dashboard
             </Button>
           </form>
           
-          <div className="mt-24 p-4 bg-amber-50 rounded-lg border border-amber-200 flex items-start space-x-3 text-amber-800">
-            <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
-            <p className="text-sm font-medium leading-snug">
+          <div className="mt-8 sm:mt-12 p-3.5 sm:p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start space-x-3 text-amber-800">
+            <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 text-amber-600" />
+            <p className="text-xs sm:text-sm font-medium leading-snug">
               This workspace is monitored. Unauthorized login attempts are logged and flagged with security.
             </p>
           </div>

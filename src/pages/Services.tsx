@@ -65,14 +65,14 @@ export default function Services() {
             Configure laundry offerings, per-kg/per-piece rates, turnaround lead times, and dynamic peak surcharges.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative w-64">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search services..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs bg-white"
+              className="pl-9 h-9 text-xs bg-white w-full"
             />
           </div>
           <Button
@@ -81,6 +81,7 @@ export default function Services() {
               setServiceToEdit(null);
               setIsModalOpen(true);
             }}
+            className="shrink-0"
           >
             <Plus className="h-4 w-4 mr-1.5" />
             Add Service

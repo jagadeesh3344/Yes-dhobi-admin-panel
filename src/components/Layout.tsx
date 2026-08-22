@@ -17,12 +17,11 @@ import {
   WashingMachine,
   Radio,
   Activity,
-  CheckCircle2,
   Trash2,
   LogOut,
   ChevronDown,
   X,
-  ExternalLink,
+  Menu,
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { BroadcastModal } from '@/components/modals/BroadcastModal';
@@ -56,6 +55,7 @@ export default function Layout() {
     setIsLiveSimulationActive,
   } = useData();
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
@@ -65,6 +65,11 @@ export default function Layout() {
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [location.pathname]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -115,178 +120,223 @@ export default function Layout() {
     navigate(path);
     setSearchQuery('');
     setIsSearchOpen(false);
+    setIsMobileSidebarOpen(false);
   };
+
+  const renderSidebarNav = () => (
+    <>
+      {/* Brand Header */}
+      <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100">
+        <div className="flex items-center space-x-3">
+          <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-600/20">
+            <WashingMachine className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="font-extrabold text-base tracking-tight text-slate-900">Yes Dhobi</h1>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Operations Console</p>
+            </div>
+          </div>
+        </div>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+          aria-label="Close sidebar"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Live System Status Pill */}
+      <div className="px-3 sm:px-4 pt-3 pb-1">
+        <button
+          onClick={() => setIsLiveSimulationActive((prev) => !prev)}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+            isLiveSimulationActive
+              ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+              : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${isLiveSimulationActive ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
+            <span>{isLiveSimulationActive ? 'Real-Time Sync: ON' : 'Live Sync: PAUSED'}</span>
+          </div>
+          <Activity className="w-3.5 h-3.5 opacity-70" />
+        </button>
+      </div>
+
+      {/* Navigation Links */}
+      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        {sidebarLinks.map((link) => {
+          const Icon = link.icon;
+          const badgeValue = link.badgeKey ? badgeMap[link.badgeKey] : 0;
+
+          return (
+            <NavLink
+              key={link.name}
+              to={link.path}
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className="flex items-center space-x-2.5">
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                    <span>{link.name}</span>
+                  </div>
+
+                  {badgeValue > 0 && (
+                    <span
+                      className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
+                        isActive
+                          ? 'bg-white/20 text-white'
+                          : link.badgeKey === 'openTickets' || link.badgeKey === 'pendingKYC'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {badgeValue}
+                    </span>
+                  )}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Sidebar Footer */}
+      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+        <button
+          onClick={() => {
+            setIsBroadcastOpen(true);
+            setIsMobileSidebarOpen(false);
+          }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer"
+        >
+          <Radio className="w-3.5 h-3.5 text-blue-600" />
+          <span>Broadcast Alert</span>
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <div className="flex min-h-screen w-full bg-slate-50/70 font-sans text-slate-900">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-200 bg-white flex flex-col fixed inset-y-0 left-0 z-20 shadow-xs">
-        {/* Brand Header */}
-        <div className="p-5 flex items-center justify-between border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-600/20">
-              <WashingMachine className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="font-extrabold text-base tracking-tight text-slate-900">Yes Dhobi</h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Operations Console</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden lg:flex w-64 border-r border-slate-200 bg-white flex-col fixed inset-y-0 left-0 z-20 shadow-xs">
+        {renderSidebarNav()}
+      </aside>
 
-        {/* Live System Status Pill */}
-        <div className="px-4 pt-3 pb-1">
-          <button
-            onClick={() => setIsLiveSimulationActive((prev) => !prev)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-              isLiveSimulationActive
-                ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
-                : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${isLiveSimulationActive ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
-              <span>{isLiveSimulationActive ? 'Real-Time Sync: ON' : 'Live Sync: PAUSED'}</span>
-            </div>
-            <Activity className="w-3.5 h-3.5 opacity-70" />
-          </button>
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-          {sidebarLinks.map((link) => {
-            const Icon = link.icon;
-            const badgeValue = link.badgeKey ? badgeMap[link.badgeKey] : 0;
-
-            return (
-              <NavLink
-                key={link.name}
-                to={link.path}
-                className={({ isActive }) =>
-                  `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <div className="flex items-center space-x-2.5">
-                      <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                      <span>{link.name}</span>
-                    </div>
-
-                    {badgeValue > 0 && (
-                      <span
-                        className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
-                          isActive
-                            ? 'bg-white/20 text-white'
-                            : link.badgeKey === 'openTickets' || link.badgeKey === 'pendingKYC'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {badgeValue}
-                      </span>
-                    )}
-                  </>
-                )}
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-          <button
-            onClick={() => setIsBroadcastOpen(true)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors shadow-2xs"
-          >
-            <Radio className="w-3.5 h-3.5 text-blue-600" />
-            <span>Broadcast Alert</span>
-          </button>
-        </div>
+      {/* Mobile Backdrop & Slide-out Drawer */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden transition-opacity animate-in fade-in duration-200"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {renderSidebarNav()}
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 flex flex-col min-h-screen">
+      <main className="flex-1 lg:ml-64 flex flex-col min-h-screen w-full min-w-0">
         {/* Sticky Top Header */}
-        <header className="h-16 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10 shadow-2xs">
-          {/* Global Search with Live Predictive Autocomplete */}
-          <div className="relative w-80" ref={searchRef}>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search orders, customers, partners..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                onFocus={() => setIsSearchOpen(true)}
-                className="w-full pl-9 pr-8 py-2 text-xs bg-slate-100/80 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+        <header className="h-16 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 lg:px-8 sticky top-0 z-30 shadow-2xs">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 pr-2">
+            {/* Hamburger Mobile Toggle Button */}
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors shrink-0"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-            {/* Predictive Search Popup */}
-            {isSearchOpen && searchQuery.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 animate-in fade-in zoom-in-95 duration-100 max-h-80 overflow-y-auto">
-                <div className="text-[10px] font-bold uppercase text-slate-400 px-2 mb-2">Matching Records</div>
-                {matchedOrders.length > 0 ? (
-                  <div className="space-y-1">
-                    {matchedOrders.slice(0, 5).map((ord) => (
-                      <button
-                        key={ord.id}
-                        onClick={() => handleSelectSearchResult('/orders')}
-                        className="w-full text-left p-2 hover:bg-blue-50 rounded-xl transition-colors flex items-center justify-between text-xs group"
-                      >
-                        <div>
-                          <div className="font-bold text-slate-900 group-hover:text-blue-600 flex items-center gap-1.5">
-                            <span>{ord.id}</span>
-                            <span className="font-normal text-slate-500">• {ord.customerName}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-500">{ord.serviceName} • ₹{ord.amount}</div>
-                        </div>
-                        <span className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold">
-                          {ord.status}
-                        </span>
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => handleSelectSearchResult('/orders')}
-                      className="w-full text-center text-xs font-bold text-blue-600 pt-2 border-t border-slate-100 hover:underline"
-                    >
-                      View all in Orders page →
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-4 text-center text-xs text-slate-500">
-                    No immediate match found for "{searchQuery}".
-                  </div>
+            {/* Global Search with Live Predictive Autocomplete */}
+            <div className="relative w-full max-w-[200px] sm:max-w-xs md:max-w-sm lg:w-80" ref={searchRef}>
+              <div className="relative">
+                <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search orders, customers..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsSearchOpen(true);
+                  }}
+                  onFocus={() => setIsSearchOpen(true)}
+                  className="w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs bg-slate-100/80 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
-            )}
+
+              {/* Predictive Search Popup */}
+              {isSearchOpen && searchQuery.trim() && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 animate-in fade-in zoom-in-95 duration-100 max-h-80 overflow-y-auto">
+                  <div className="text-[10px] font-bold uppercase text-slate-400 px-2 mb-2">Matching Records</div>
+                  {matchedOrders.length > 0 ? (
+                    <div className="space-y-1">
+                      {matchedOrders.slice(0, 5).map((ord) => (
+                        <button
+                          key={ord.id}
+                          onClick={() => handleSelectSearchResult('/orders')}
+                          className="w-full text-left p-2 hover:bg-blue-50 rounded-xl transition-colors flex items-center justify-between text-xs group cursor-pointer"
+                        >
+                          <div>
+                            <div className="font-bold text-slate-900 group-hover:text-blue-600 flex items-center gap-1.5">
+                              <span>{ord.id}</span>
+                              <span className="font-normal text-slate-500 truncate max-w-[120px] sm:max-w-none">• {ord.customerName}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500">{ord.serviceName} • ₹{ord.amount}</div>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold shrink-0">
+                            {ord.status}
+                          </span>
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handleSelectSearchResult('/orders')}
+                        className="w-full text-center text-xs font-bold text-blue-600 pt-2 border-t border-slate-100 hover:underline cursor-pointer"
+                      >
+                        View all in Orders page →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-xs text-slate-500">
+                      No immediate match found for "{searchQuery}".
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Header Controls */}
-          <div className="flex items-center space-x-4">
-            {/* Quick Live Mode Toggle */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-semibold text-slate-600">
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+            {/* Quick Live Mode Toggle (Hidden on small mobile) */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-semibold text-slate-600">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Bangalore Central Hub</span>
+              <span className="truncate max-w-[130px] lg:max-w-none">Bangalore Central Hub</span>
             </div>
 
             {/* Notification Bell with Dropdown */}
@@ -296,7 +346,7 @@ export default function Layout() {
                 className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 aria-label="View notifications"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 {unreadNotifsCount > 0 && (
                   <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center border-2 border-white shadow-xs">
                     {unreadNotifsCount}
@@ -306,7 +356,7 @@ export default function Layout() {
 
               {/* Notification Popover */}
               {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-xs text-slate-900">Live Operations Feed</span>
@@ -319,7 +369,7 @@ export default function Layout() {
                     {notifications.length > 0 && (
                       <button
                         onClick={clearAllNotifications}
-                        className="text-[10px] text-slate-500 hover:text-red-600 font-semibold flex items-center gap-1 transition-colors"
+                        className="text-[10px] text-slate-500 hover:text-red-600 font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                         Clear
@@ -355,21 +405,21 @@ export default function Layout() {
             </div>
 
             {/* Profile Dropdown */}
-            <div className="relative border-l border-slate-200 pl-4" ref={profileRef}>
+            <div className="relative border-l border-slate-200 pl-2 sm:pl-3" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex items-center space-x-3 p-1 rounded-xl hover:bg-slate-100 transition-colors text-left cursor-pointer"
+                className="flex items-center space-x-2 sm:space-x-2.5 p-1 rounded-xl hover:bg-slate-100 transition-colors text-left cursor-pointer"
               >
                 <img
                   src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces"
                   alt="Admin User"
-                  className="h-8 w-8 rounded-full object-cover ring-2 ring-blue-100"
+                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover ring-2 ring-blue-100 shrink-0"
                 />
-                <div className="hidden sm:block">
+                <div className="hidden sm:block text-left">
                   <p className="text-xs font-bold text-slate-900 leading-tight">Zoshua Colah</p>
                   <p className="text-[10px] text-slate-500 font-semibold">Master Admin</p>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden xs:block" />
               </button>
 
               {/* Profile Dropdown Menu */}
@@ -401,9 +451,11 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* Page View Container */}
-        <div className="p-8 flex-1 overflow-auto">
-          <Outlet />
+        {/* Page View Container with responsive bounds */}
+        <div className="p-3 sm:p-5 md:p-6 lg:p-8 flex-1 overflow-x-hidden">
+          <div className="max-w-7xl mx-auto w-full">
+            <Outlet />
+          </div>
         </div>
       </main>
 
@@ -412,3 +464,4 @@ export default function Layout() {
     </div>
   );
 }
+
