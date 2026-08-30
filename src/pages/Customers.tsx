@@ -244,6 +244,16 @@ export default function Customers() {
             <Download className="h-4 w-4 mr-1.5" />
             Export CSV
           </Button>
+          <Button
+            onClick={() => {
+              setCustomerToEdit(null);
+              setIsModalOpen(true);
+            }}
+            className="h-10 text-xs sm:text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm shadow-blue-600/20"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add New Customer
+          </Button>
         </div>
       </div>
 
