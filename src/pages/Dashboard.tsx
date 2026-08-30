@@ -31,6 +31,7 @@ import { useData } from '@/context/DataContext';
 import { OrderModal } from '@/components/modals/OrderModal';
 import { CustomerModal } from '@/components/modals/CustomerModal';
 import { RiderModal } from '@/components/modals/RiderModal';
+import { VendorModal } from '@/components/modals/VendorModal';
 import { VerificationModal } from '@/components/modals/VerificationModal';
 import { exportToCsv } from '@/lib/exportCsv';
 import { Order, VerificationItem } from '@/types';
@@ -60,6 +61,7 @@ export default function Dashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isRiderModalOpen, setIsRiderModalOpen] = useState(false);
+  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
   const [selectedVerification, setSelectedVerification] = useState<VerificationItem | null>(null);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
@@ -154,6 +156,24 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Top Action Bar for Rider & Vendor */}
+      <div className="flex items-center justify-end gap-2.5">
+        <Button
+          onClick={() => setIsRiderModalOpen(true)}
+          className="h-10 text-xs sm:text-sm font-semibold rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 cursor-pointer shadow-2xs"
+        >
+          <Plus className="h-4 w-4 mr-1.5 text-blue-600" />
+          Add Rider
+        </Button>
+        <Button
+          onClick={() => setIsVendorModalOpen(true)}
+          className="h-10 text-xs sm:text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm shadow-blue-600/20"
+        >
+          <Plus className="h-4 w-4 mr-1.5" />
+          Add Vendor
+        </Button>
+      </div>
+
       {/* 5 KPI Stat Cards in One Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {/* Total Orders Today */}
@@ -489,6 +509,11 @@ export default function Dashboard() {
       <RiderModal
         isOpen={isRiderModalOpen}
         onClose={() => setIsRiderModalOpen(false)}
+      />
+
+      <VendorModal
+        isOpen={isVendorModalOpen}
+        onClose={() => setIsVendorModalOpen(false)}
       />
 
       <VerificationModal
