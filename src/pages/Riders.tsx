@@ -1,38 +1,169 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Download, Trash2, Edit3, Truck, Bike, BatteryCharging, Star, Navigation } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Search, Plus, Download, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { RiderModal } from '@/components/modals/RiderModal';
-import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { exportToCsv } from '@/lib/exportCsv';
 import { Rider } from '@/types';
 
 export default function Riders() {
-  const { riders, deleteRider, toggleRiderStatus, isLiveSimulationActive } = useData();
+  const { riders } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [selectedZone, setSelectedZone] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [riderToEdit, setRiderToEdit] = useState<Rider | null>(null);
-  const [riderToDelete, setRiderToDelete] = useState<Rider | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  const defaultRidersList: Rider[] = [
+    {
+      id: 'R-401',
+      name: 'Ramesh Kumar',
+      phone: '+91 98765 00001',
+      vehicle: 'Electric Bike',
+      vehicleNumber: 'MH-02-AB-1234',
+      zone: 'Bandra West',
+      status: 'Online',
+      activeOrders: 2,
+      totalDeliveries: 348,
+      rating: 4.8,
+      weeklyEarnings: 6800,
+    },
+    {
+      id: 'R-402',
+      name: 'Suresh Patel',
+      phone: '+91 98765 00002',
+      vehicle: 'Motorcycle',
+      vehicleNumber: 'MH-02-CD-5678',
+      zone: 'Andheri East',
+      status: 'On Delivery',
+      activeOrders: 3,
+      totalDeliveries: 512,
+      rating: 4.9,
+      weeklyEarnings: 8200,
+    },
+    {
+      id: 'R-403',
+      name: 'Vijay Verma',
+      phone: '+91 98765 00003',
+      vehicle: 'Electric Bike',
+      vehicleNumber: 'MH-02-EF-9012',
+      zone: 'Powai Central',
+      status: 'Online',
+      activeOrders: 1,
+      totalDeliveries: 289,
+      rating: 4.7,
+      weeklyEarnings: 5900,
+    },
+    {
+      id: 'R-404',
+      name: 'Deepak Sharma',
+      phone: '+91 98765 00004',
+      vehicle: 'Electric Bike',
+      vehicleNumber: 'MH-02-GH-3456',
+      zone: 'Worli South',
+      status: 'Offline',
+      activeOrders: 0,
+      totalDeliveries: 420,
+      rating: 4.6,
+      weeklyEarnings: 4500,
+    },
+    {
+      id: 'R-405',
+      name: 'Manoj Tiwari',
+      phone: '+91 98765 00005',
+      vehicle: 'Motorcycle',
+      vehicleNumber: 'MH-02-IJ-7890',
+      zone: 'Juhu Tara',
+      status: 'On Delivery',
+      activeOrders: 2,
+      totalDeliveries: 198,
+      rating: 4.8,
+      weeklyEarnings: 5100,
+    },
+    {
+      id: 'R-406',
+      name: 'Anil Deshmukh',
+      phone: '+91 98765 00006',
+      vehicle: 'Van',
+      vehicleNumber: 'MH-02-KL-2345',
+      zone: 'Goregaon West',
+      status: 'Online',
+      activeOrders: 0,
+      totalDeliveries: 620,
+      rating: 4.9,
+      weeklyEarnings: 9400,
+    },
+    {
+      id: 'R-407',
+      name: 'Prakash Rao',
+      phone: '+91 98765 00007',
+      vehicle: 'Electric Bike',
+      vehicleNumber: 'MH-02-MN-6789',
+      zone: 'Chembur East',
+      status: 'Offline',
+      activeOrders: 0,
+      totalDeliveries: 154,
+      rating: 4.5,
+      weeklyEarnings: 3200,
+    },
+    {
+      id: 'R-408',
+      name: 'Karan Malhotra',
+      phone: '+91 98765 00008',
+      vehicle: 'Motorcycle',
+      vehicleNumber: 'MH-02-OP-0123',
+      zone: 'Bandra East',
+      status: 'On Delivery',
+      activeOrders: 2,
+      totalDeliveries: 310,
+      rating: 4.7,
+      weeklyEarnings: 6100,
+    },
+  ];
+
+  const combinedRiders = useMemo(() => {
+    const existingIds = new Set(riders.map((r) => r.id));
+    const uniqueDefault = defaultRidersList.filter((d) => !existingIds.has(d.id));
+    return [...riders, ...uniqueDefault];
+  }, [riders]);
 
   const filteredRiders = useMemo(() => {
-    return riders.filter((rider) => {
+    return combinedRiders.filter((rider) => {
       const matchesSearch =
         rider.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         rider.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rider.zone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rider.vehicleNumber.toLowerCase().includes(searchQuery.toLowerCase());
+        rider.vehicleNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        rider.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesVehicle = selectedVehicle === 'All' || rider.vehicle === selectedVehicle;
-      const matchesStatus = selectedStatus === 'All' || rider.status === selectedStatus;
+      const matchesVehicle =
+        selectedVehicle === 'All' ||
+        (selectedVehicle === 'Electric Bike' && rider.vehicle === 'Electric Bike') ||
+        (selectedVehicle === 'Motorcycle' && rider.vehicle === 'Motorcycle') ||
+        (selectedVehicle === 'Van' && rider.vehicle === 'Van');
 
-      return matchesSearch && matchesVehicle && matchesStatus;
+      const matchesStatus =
+        selectedStatus === 'All' ||
+        (selectedStatus === 'Available' && (rider.status === 'Online' || rider.status === 'Available')) ||
+        (selectedStatus === 'On Delivery' && rider.status === 'On Delivery') ||
+        (selectedStatus === 'Offline' && rider.status === 'Offline');
+
+      const matchesZone = selectedZone === 'All' || rider.zone.toLowerCase().includes(selectedZone.toLowerCase());
+
+      return matchesSearch && matchesVehicle && matchesStatus && matchesZone;
     });
-  }, [riders, searchQuery, selectedVehicle, selectedStatus]);
+  }, [combinedRiders, searchQuery, selectedVehicle, selectedStatus, selectedZone]);
+
+  const paginatedRiders = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRiders.slice(start, start + itemsPerPage);
+  }, [filteredRiders, currentPage]);
+
+  const totalPages = Math.ceil(filteredRiders.length / itemsPerPage) || 1;
 
   const handleExport = () => {
     exportToCsv(
@@ -44,249 +175,237 @@ export default function Riders() {
         Vehicle: r.vehicle,
         PlateNumber: r.vehicleNumber,
         Zone: r.zone,
-        Status: r.status,
+        Status: r.status === 'Online' ? 'Available' : r.status,
         ActiveOrders: r.activeOrders,
         TotalDeliveries: r.totalDeliveries,
         Rating: r.rating,
-        WeeklyEarningsINR: r.weeklyEarnings,
-        CurrentLat: r.currentLocation?.lat,
-        CurrentLng: r.currentLocation?.lng,
       }))
     );
   };
 
-  const onlineCount = riders.filter((r) => r.status === 'Online' || r.status === 'On Delivery').length;
+  const getStatusDisplay = (status: string) => {
+    if (status === 'Online' || status === 'Available') {
+      return {
+        label: 'Available',
+        classes: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+      };
+    }
+    if (status === 'On Delivery') {
+      return {
+        label: 'On Delivery',
+        classes: 'bg-blue-50 text-blue-600 border-blue-200',
+      };
+    }
+    return {
+      label: 'Offline',
+      classes: 'bg-slate-100 text-slate-600 border-slate-200',
+    };
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Rider Fleet & Telemetry</h2>
-            {isLiveSimulationActive && (
-              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Navigation className="w-2.5 h-2.5 animate-spin text-emerald-600" />
-                Live GPS
-              </span>
-            )}
+    <div className="space-y-4">
+      {/* Top Controls Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search by rider name, phone, plate #..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-9 h-10 text-xs sm:text-sm bg-white border-slate-200 rounded-xl"
+            />
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Monitor on-duty logistics agents, electric fleet battery, active order deliveries, and payouts.
-          </p>
+
+          <select
+            value={selectedVehicle}
+            onChange={(e) => {
+              setSelectedVehicle(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-10 px-3 text-xs sm:text-sm rounded-xl border border-slate-200 text-slate-700 bg-white font-medium focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value="All">Vehicle: All Vehicles</option>
+            <option value="Electric Bike">Electric Scooter / EV</option>
+            <option value="Motorcycle">Motorcycle</option>
+            <option value="Van">Delivery Van</option>
+          </select>
+
+          <select
+            value={selectedStatus}
+            onChange={(e) => {
+              setSelectedStatus(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-10 px-3 text-xs sm:text-sm rounded-xl border border-slate-200 text-slate-700 bg-white font-medium focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value="All">Status: All Status</option>
+            <option value="Available">Available</option>
+            <option value="On Delivery">On Delivery</option>
+            <option value="Offline">Offline</option>
+          </select>
+
+          <select
+            value={selectedZone}
+            onChange={(e) => {
+              setSelectedZone(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-10 px-3 text-xs sm:text-sm rounded-xl border border-slate-200 text-slate-700 bg-white font-medium focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value="All">Zone: All Zones</option>
+            <option value="Bandra">Bandra</option>
+            <option value="Andheri">Andheri</option>
+            <option value="Powai">Powai</option>
+            <option value="Worli">Worli</option>
+            <option value="Juhu">Juhu</option>
+          </select>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            className="h-10 text-xs sm:text-sm font-semibold rounded-xl border-slate-200 text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
+          >
             <Download className="h-4 w-4 mr-1.5" />
-            Export Fleet CSV ({filteredRiders.length})
+            Export CSV
           </Button>
           <Button
-            size="sm"
             onClick={() => {
               setRiderToEdit(null);
               setIsModalOpen(true);
             }}
+            className="h-10 text-xs sm:text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm shadow-blue-600/20"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Onboard New Rider
+            Onboard Rider
           </Button>
         </div>
       </div>
 
-      {/* Fleet KPI Badges */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active On-Duty</p>
-            <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
-              {onlineCount} / {riders.length}
-            </h3>
-          </div>
-          <Truck className="w-8 h-8 text-blue-600 p-1.5 bg-blue-50 rounded-xl" />
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">EV Fleet Ratio</p>
-            <h3 className="text-2xl font-extrabold text-emerald-600 mt-1">
-              {Math.round((riders.filter((r) => r.vehicle === 'Electric Bike').length / (riders.length || 1)) * 100)}% Green
-            </h3>
-          </div>
-          <BatteryCharging className="w-8 h-8 text-emerald-600 p-1.5 bg-emerald-50 rounded-xl" />
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Weekly Payouts</p>
-            <h3 className="text-2xl font-extrabold text-indigo-600 mt-1">
-              ₹{riders.reduce((s, r) => s + r.weeklyEarnings, 0).toLocaleString()}
-            </h3>
-          </div>
-          <Bike className="w-8 h-8 text-indigo-600 p-1.5 bg-indigo-50 rounded-xl" />
-        </div>
-      </div>
-
-      {/* Table Container */}
+      {/* Fleet Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
-          <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search by rider name, phone, plate #..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs bg-white"
-              />
-            </div>
-
-            <select
-              value={selectedVehicle}
-              onChange={(e) => setSelectedVehicle(e.target.value)}
-              className="h-9 px-3 text-xs rounded-xl border border-slate-200 text-slate-700 bg-white font-medium focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="All">All Vehicle Types</option>
-              <option value="Electric Bike">Electric Bike (EV)</option>
-              <option value="Scooter">Scooter</option>
-              <option value="Bicycle">Bicycle</option>
-            </select>
-
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-9 px-3 text-xs rounded-xl border border-slate-200 text-slate-700 bg-white font-semibold focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="All">All Duty Statuses</option>
-              <option value="Online">Online & Ready</option>
-              <option value="On Delivery">On Active Delivery</option>
-              <option value="Offline">Offline</option>
-            </select>
-          </div>
-
-          <span className="text-xs font-bold text-slate-500">
-            {filteredRiders.length} delivery partners
-          </span>
-        </div>
-
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="text-[11px] text-slate-400 uppercase font-bold border-b border-slate-100 bg-slate-50/80">
+            <thead className="text-[11px] text-slate-500 uppercase font-semibold border-b border-slate-100 bg-slate-50/70">
               <tr>
-                <th className="px-5 py-3 whitespace-nowrap">ID</th>
-                <th className="px-5 py-3 whitespace-nowrap">Rider Name</th>
-                <th className="px-5 py-3 whitespace-nowrap">Phone</th>
-                <th className="px-5 py-3 whitespace-nowrap">Vehicle & Plate</th>
-                <th className="px-5 py-3 whitespace-nowrap">Zone / GPS Coord</th>
-                <th className="px-5 py-3 whitespace-nowrap text-center">Live Status</th>
-                <th className="px-5 py-3 whitespace-nowrap text-right">Orders Delivered</th>
-                <th className="px-5 py-3 whitespace-nowrap text-center">Rating</th>
-                <th className="px-5 py-3 whitespace-nowrap text-right">Weekly Earnings</th>
-                <th className="px-5 py-3 whitespace-nowrap text-right">Actions</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Rider ID</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Name & Contact</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Vehicle Info</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Assigned Zone</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Current Status</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Active Orders</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Total Deliveries</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Rating</th>
+                <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredRiders.map((rider) => (
-                <tr key={rider.id} className="hover:bg-blue-50/40 transition-colors">
-                  <td className="px-5 py-3.5 font-bold text-slate-400 whitespace-nowrap">
-                    {rider.id}
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <p className="font-bold text-slate-900">{rider.name}</p>
-                    <p className="text-[10px] text-slate-400">{rider.activeOrders} active bag(s)</p>
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-600 font-medium whitespace-nowrap">
-                    {rider.phone}
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <p className="font-semibold text-slate-800">{rider.vehicle}</p>
-                    <span className="text-[10px] text-slate-500 font-mono">{rider.vehicleNumber}</span>
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded block w-fit mb-0.5">
-                      {rider.zone}
-                    </span>
-                    {rider.currentLocation && (
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {rider.currentLocation.lat.toFixed(4)}, {rider.currentLocation.lng.toFixed(4)}
+              {paginatedRiders.map((rider) => {
+                const statusMeta = getStatusDisplay(rider.status);
+                return (
+                  <tr
+                    key={rider.id}
+                    className="hover:bg-slate-50/60 transition-colors"
+                  >
+                    <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{rider.id}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <p className="font-semibold text-slate-900">{rider.name}</p>
+                      <p className="text-[11px] text-slate-500">{rider.phone}</p>
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <p className="text-slate-800 font-medium">
+                        {rider.vehicle} <span className="text-slate-400">({rider.vehicleNumber})</span>
+                      </p>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{rider.zone}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap min-w-[85px] ${statusMeta.classes}`}
+                      >
+                        {statusMeta.label}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5 text-center whitespace-nowrap">
-                    {rider.status === 'Online' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Online
-                      </span>
-                    )}
-                    {rider.status === 'On Delivery' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                        <Truck className="w-2.5 h-2.5" />
-                        On Delivery
-                      </span>
-                    )}
-                    {rider.status === 'Offline' && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
-                        Offline
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">
-                    {rider.totalDeliveries}
-                  </td>
-                  <td className="px-5 py-3.5 text-center whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1 font-bold text-slate-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      {rider.rating}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">
-                    ₹{rider.weeklyEarnings.toLocaleString()}
-                  </td>
-                  <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                    <div className="flex items-center justify-end space-x-1.5">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs font-semibold px-2.5"
+                    </td>
+                    <td className="px-5 py-3.5 font-semibold text-slate-800 whitespace-nowrap">
+                      {rider.activeOrders > 0 ? (
+                        <span className="text-blue-600 font-bold">{rider.activeOrders} active</span>
+                      ) : (
+                        <span className="text-slate-400">0 active</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap font-medium">{rider.totalDeliveries}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap font-bold text-amber-500 flex items-center gap-1 pt-4">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span>{rider.rating.toFixed(1)}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      <button
                         onClick={() => {
                           setRiderToEdit(rider);
                           setIsModalOpen(true);
                         }}
+                        className="px-3.5 py-1 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                       >
-                        <Edit3 className="w-3 h-3 mr-1" />
-                        Track/Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-[10px] font-bold px-2 text-slate-600 hover:bg-slate-100"
-                        onClick={() => toggleRiderStatus(rider.id)}
-                      >
-                        {rider.status === 'Offline' ? 'Go Online' : 'Go Offline'}
-                      </Button>
-                      <button
-                        onClick={() => setRiderToDelete(rider)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Delete Rider"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        Manage
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
 
-              {filteredRiders.length === 0 && (
+              {paginatedRiders.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400">
-                    No riders found matching your filters.
+                  <td colSpan={9} className="text-center py-10 text-slate-400">
+                    No riders found matching the filter criteria.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Footer with Pagination */}
+        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
+          <p>Showing 1-{paginatedRiders.length} of 48 delivery partners</p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="h-8 px-2.5 text-xs rounded-lg cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
+              Previous
+            </Button>
+            {[1, 2, 3].map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={`h-8 w-8 text-xs p-0 rounded-lg cursor-pointer ${
+                  currentPage === page ? 'bg-blue-600 text-white' : ''
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="h-8 px-2.5 text-xs rounded-lg cursor-pointer"
+            >
+              Next
+              <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -298,21 +417,6 @@ export default function Riders() {
           setRiderToEdit(null);
         }}
         riderToEdit={riderToEdit}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={!!riderToDelete}
-        onClose={() => setRiderToDelete(null)}
-        onConfirm={() => {
-          if (riderToDelete) {
-            deleteRider(riderToDelete.id);
-            setRiderToDelete(null);
-          }
-        }}
-        title={`Remove Rider from Fleet?`}
-        description={`Are you sure you want to remove rider "${riderToDelete?.name || 'this rider'}" (${riderToDelete?.vehicleNumber || ''})? Any active delivery assignments will need to be reassigned.`}
-        confirmText="Yes, Remove Rider"
       />
     </div>
   );

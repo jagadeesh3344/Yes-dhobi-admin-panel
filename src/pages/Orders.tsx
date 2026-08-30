@@ -120,22 +120,14 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary KPI Cards - Clean 3-Card Grid without Blinking/Ping */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Pickup</p>
-            <h3 className="text-2xl font-extrabold text-orange-600 mt-1">{pendingPickupCount}</h3>
-          </div>
-          <span className="w-3 h-3 rounded-full bg-orange-500 animate-ping" />
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">In Process (Washing)</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">In Process (Washing & Ironing)</p>
             <h3 className="text-2xl font-extrabold text-blue-600 mt-1">{inProcessCount}</h3>
           </div>
-          <span className="w-3 h-3 rounded-full bg-blue-500" />
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
@@ -143,7 +135,7 @@ export default function Orders() {
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Out for Delivery</p>
             <h3 className="text-2xl font-extrabold text-amber-600 mt-1">{outForDeliveryCount}</h3>
           </div>
-          <span className="w-3 h-3 rounded-full bg-amber-500" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
@@ -151,7 +143,7 @@ export default function Orders() {
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Delivered Completed</p>
             <h3 className="text-2xl font-extrabold text-emerald-600 mt-1">{deliveredCount}</h3>
           </div>
-          <span className="w-3 h-3 rounded-full bg-emerald-500" />
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
         </div>
       </div>
 
@@ -282,7 +274,7 @@ export default function Orders() {
                     <select
                       value={order.status}
                       onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-pointer ${getStatusBadgeClass(
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-pointer whitespace-nowrap outline-none ${getStatusBadgeClass(
                         order.status
                       )}`}
                     >

@@ -1,38 +1,157 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Download, Trash2, Edit3, Store, Star, CheckCircle, AlertOctagon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Search, Plus, Download, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { VendorModal } from '@/components/modals/VendorModal';
-import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { exportToCsv } from '@/lib/exportCsv';
 import { Vendor } from '@/types';
 
 export default function Vendors() {
-  const { vendors, deleteVendor, toggleVendorStatus } = useData();
+  const { vendors } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedZone, setSelectedZone] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [vendorToEdit, setVendorToEdit] = useState<Vendor | null>(null);
-  const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
+
+  const defaultVendorsList: Vendor[] = [
+    {
+      id: 'V-301',
+      name: 'Royal Drycleaners & Laundromat',
+      owner: 'Mohanlal Joshi',
+      phone: '+91 98201 11223',
+      location: 'Bandra West, Mumbai',
+      zone: 'Bandra West',
+      capacityPerDay: 150,
+      activeOrders: 12,
+      commissionRate: 18,
+      status: 'Active',
+      rating: 4.9,
+      joinedDate: '10 Jan 2024',
+    },
+    {
+      id: 'V-302',
+      name: 'Speedy Wash Hub',
+      owner: 'Gopal Krishna',
+      phone: '+91 98201 44556',
+      location: 'Andheri East, Mumbai',
+      zone: 'Andheri East',
+      capacityPerDay: 200,
+      activeOrders: 18,
+      commissionRate: 15,
+      status: 'Active',
+      rating: 4.8,
+      joinedDate: '18 Jan 2024',
+    },
+    {
+      id: 'V-303',
+      name: 'EcoClean Fabric Care',
+      owner: 'Sunil Rao',
+      phone: '+91 98201 77889',
+      location: 'Powai Central, Mumbai',
+      zone: 'Powai Central',
+      capacityPerDay: 120,
+      activeOrders: 8,
+      commissionRate: 20,
+      status: 'Active',
+      rating: 4.7,
+      joinedDate: '02 Feb 2024',
+    },
+    {
+      id: 'V-304',
+      name: 'Modern Dhobi Express',
+      owner: 'Dinesh Yadav',
+      phone: '+91 98201 99001',
+      location: 'Worli Sea Face, Mumbai',
+      zone: 'Worli South',
+      capacityPerDay: 100,
+      activeOrders: 4,
+      commissionRate: 18,
+      status: 'Pending Verification',
+      rating: 4.4,
+      joinedDate: '14 Feb 2024',
+    },
+    {
+      id: 'V-305',
+      name: 'Sparkle Wash & Fold',
+      owner: 'Kishore Kumar',
+      phone: '+91 98201 22334',
+      location: 'Juhu Tara Road, Mumbai',
+      zone: 'Juhu Tara',
+      capacityPerDay: 80,
+      activeOrders: 0,
+      commissionRate: 22,
+      status: 'Suspended',
+      rating: 4.2,
+      joinedDate: '21 Feb 2024',
+    },
+    {
+      id: 'V-306',
+      name: 'Super Steam Laundry',
+      owner: 'Naresh Bansal',
+      phone: '+91 98201 55667',
+      location: 'Goregaon West, Mumbai',
+      zone: 'Goregaon West',
+      capacityPerDay: 180,
+      activeOrders: 14,
+      commissionRate: 16,
+      status: 'Active',
+      rating: 4.8,
+      joinedDate: '01 Mar 2024',
+    },
+    {
+      id: 'V-307',
+      name: 'QuickPress Steamers',
+      owner: 'Harish Mehta',
+      phone: '+91 98201 88990',
+      location: 'Chembur East, Mumbai',
+      zone: 'Chembur East',
+      capacityPerDay: 110,
+      activeOrders: 6,
+      commissionRate: 18,
+      status: 'Active',
+      rating: 4.6,
+      joinedDate: '15 Mar 2024',
+    },
+  ];
+
+  const combinedVendors = useMemo(() => {
+    const existingIds = new Set(vendors.map((v) => v.id));
+    const uniqueDefault = defaultVendorsList.filter((d) => !existingIds.has(d.id));
+    return [...vendors, ...uniqueDefault];
+  }, [vendors]);
 
   const filteredVendors = useMemo(() => {
-    return vendors.filter((vendor) => {
+    return combinedVendors.filter((vendor) => {
       const matchesSearch =
         vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         vendor.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
         vendor.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.phone.toLowerCase().includes(searchQuery.toLowerCase());
+        vendor.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesZone = selectedZone === 'All' || vendor.zone.includes(selectedZone);
-      const matchesStatus = selectedStatus === 'All' || vendor.status === selectedStatus;
+      const matchesZone = selectedZone === 'All' || vendor.zone.toLowerCase().includes(selectedZone.toLowerCase()) || vendor.location.toLowerCase().includes(selectedZone.toLowerCase());
+
+      const matchesStatus =
+        selectedStatus === 'All' ||
+        (selectedStatus === 'Active' && vendor.status === 'Active') ||
+        (selectedStatus === 'Pending' && vendor.status === 'Pending Verification') ||
+        (selectedStatus === 'Suspended' && vendor.status === 'Suspended') ||
+        (selectedStatus === 'Inactive' && vendor.status === 'Inactive');
 
       return matchesSearch && matchesZone && matchesStatus;
     });
-  }, [vendors, searchQuery, selectedZone, selectedStatus]);
+  }, [combinedVendors, searchQuery, selectedZone, selectedStatus]);
+
+  const paginatedVendors = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredVendors.slice(start, start + itemsPerPage);
+  }, [filteredVendors, currentPage]);
+
+  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage) || 1;
 
   const handleExport = () => {
     exportToCsv(
@@ -43,231 +162,230 @@ export default function Vendors() {
         Owner: v.owner,
         Phone: v.phone,
         Zone: v.zone,
-        Address: v.location,
-        DailyCapacityKg: v.capacityPerDay,
+        CapacityKgPerDay: v.capacityPerDay,
         ActiveOrders: v.activeOrders,
         CommissionPct: v.commissionRate,
         Status: v.status,
         Rating: v.rating,
-        JoinedDate: v.joinedDate,
       }))
     );
   };
 
-  const pendingApprovalsCount = vendors.filter((v) => v.status === 'Pending Verification').length;
+  const getStatusDisplay = (status: string) => {
+    if (status === 'Active') {
+      return {
+        label: 'Active',
+        classes: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+      };
+    }
+    if (status === 'Pending Verification') {
+      return {
+        label: 'Pending',
+        classes: 'bg-amber-50 text-amber-700 border-amber-200',
+      };
+    }
+    if (status === 'Suspended') {
+      return {
+        label: 'Suspended',
+        classes: 'bg-rose-50 text-rose-600 border-rose-200',
+      };
+    }
+    return {
+      label: 'Inactive',
+      classes: 'bg-slate-100 text-slate-600 border-slate-200',
+    };
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Laundry Partners Network</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Onboard local dhobi shops, manage wash capacities, commission splits, and quality ratings.
-          </p>
+    <div className="space-y-4">
+      {/* Top Controls Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search by vendor name, owner, area..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-9 h-10 text-xs sm:text-sm bg-white border-slate-200 rounded-xl"
+            />
+          </div>
+
+          <select
+            value={selectedStatus}
+            onChange={(e) => {
+              setSelectedStatus(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-10 px-3 text-xs sm:text-sm rounded-xl border border-slate-200 text-slate-700 bg-white font-medium focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value="All">Status: All Vendors</option>
+            <option value="Active">Active</option>
+            <option value="Pending">Pending Verification</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+
+          <select
+            value={selectedZone}
+            onChange={(e) => {
+              setSelectedZone(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-10 px-3 text-xs sm:text-sm rounded-xl border border-slate-200 text-slate-700 bg-white font-medium focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value="All">Zone: All Zones</option>
+            <option value="Bandra">Bandra</option>
+            <option value="Andheri">Andheri</option>
+            <option value="Powai">Powai</option>
+            <option value="Worli">Worli</option>
+            <option value="Juhu">Juhu</option>
+            <option value="Goregaon">Goregaon</option>
+          </select>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            className="h-10 text-xs sm:text-sm font-semibold rounded-xl border-slate-200 text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
+          >
             <Download className="h-4 w-4 mr-1.5" />
-            Export CSV ({filteredVendors.length})
+            Export CSV
           </Button>
           <Button
-            size="sm"
             onClick={() => {
               setVendorToEdit(null);
               setIsModalOpen(true);
             }}
+            className="h-10 text-xs sm:text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm shadow-blue-600/20"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Add New Shop
+            Add Vendor
           </Button>
         </div>
       </div>
 
-      {/* Summary KPI Badges */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Partner Hubs</p>
-            <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
-              {vendors.filter((v) => v.status === 'Active').length}
-            </h3>
-          </div>
-          <Store className="w-8 h-8 text-blue-600 p-1.5 bg-blue-50 rounded-xl" />
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Network Capacity</p>
-            <h3 className="text-2xl font-extrabold text-emerald-600 mt-1">
-              {vendors.reduce((s, v) => s + v.capacityPerDay, 0)} kg/day
-            </h3>
-          </div>
-          <CheckCircle className="w-8 h-8 text-emerald-600 p-1.5 bg-emerald-50 rounded-xl" />
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">KYC Queue</p>
-            <h3 className="text-2xl font-extrabold text-amber-600 mt-1">{pendingApprovalsCount} Pending</h3>
-          </div>
-          <AlertOctagon className="w-8 h-8 text-amber-600 p-1.5 bg-amber-50 rounded-xl" />
-        </div>
-      </div>
-
-      {/* Table Container */}
+      {/* Vendors Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
-          <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search by shop name, owner, area..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs bg-white"
-              />
-            </div>
-
-            <select
-              value={selectedZone}
-              onChange={(e) => setSelectedZone(e.target.value)}
-              className="h-9 px-3 text-xs rounded-xl border border-slate-200 text-slate-700 bg-white font-medium focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="All">All City Zones</option>
-              <option value="Indiranagar">Indiranagar & HSR (Bangalore)</option>
-              <option value="Andheri">Andheri & Bandra (Mumbai)</option>
-              <option value="Karol Bagh">Karol Bagh & Dwarka (Delhi)</option>
-            </select>
-
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-9 px-3 text-xs rounded-xl border border-slate-200 text-slate-700 bg-white font-semibold focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Active">Active Partners</option>
-              <option value="Pending Verification">Pending Verification</option>
-              <option value="Suspended">Suspended</option>
-            </select>
-          </div>
-
-          <span className="text-xs font-bold text-slate-500">
-            {filteredVendors.length} laundry hubs listed
-          </span>
-        </div>
-
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="text-[11px] text-slate-400 uppercase font-bold border-b border-slate-100 bg-slate-50/80">
+            <thead className="text-[11px] text-slate-500 uppercase font-semibold border-b border-slate-100 bg-slate-50/70">
               <tr>
-                <th className="px-5 py-3 whitespace-nowrap">ID</th>
-                <th className="px-5 py-3 whitespace-nowrap">Shop & Business</th>
-                <th className="px-5 py-3 whitespace-nowrap">Owner / Phone</th>
-                <th className="px-5 py-3 whitespace-nowrap">City Zone & Address</th>
-                <th className="px-5 py-3 whitespace-nowrap text-right">Daily Cap.</th>
-                <th className="px-5 py-3 whitespace-nowrap text-right">Commission</th>
-                <th className="px-5 py-3 whitespace-nowrap text-center">Quality Rating</th>
-                <th className="px-5 py-3 whitespace-nowrap text-center">Status</th>
-                <th className="px-5 py-3 whitespace-nowrap text-right">Actions</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Vendor ID</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Vendor / Shop Name</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Owner & Contact</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Location / Zone</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Capacity / Day</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Active Orders</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Commission</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Status</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Rating</th>
+                <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredVendors.map((vendor) => (
-                <tr key={vendor.id} className="hover:bg-blue-50/40 transition-colors">
-                  <td className="px-5 py-3.5 font-bold text-slate-400 whitespace-nowrap">
-                    {vendor.id}
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <p className="font-bold text-slate-900">{vendor.name}</p>
-                    <p className="text-[10px] text-slate-400">Joined {vendor.joinedDate}</p>
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <p className="font-semibold text-slate-800">{vendor.owner}</p>
-                    <p className="text-[10px] text-slate-500">{vendor.phone}</p>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded block w-fit mb-0.5">
-                      {vendor.zone}
-                    </span>
-                    <span className="text-slate-600 text-[11px] truncate block max-w-xs">{vendor.location}</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-right font-bold text-slate-900 whitespace-nowrap">
-                    {vendor.capacityPerDay} kg
-                  </td>
-                  <td className="px-5 py-3.5 text-right font-semibold text-slate-700 whitespace-nowrap">
-                    {vendor.commissionRate}%
-                  </td>
-                  <td className="px-5 py-3.5 text-center whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1 font-bold text-slate-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      {vendor.rating > 0 ? vendor.rating : 'New'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-center whitespace-nowrap">
-                    {vendor.status === 'Active' && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        Active Hub
+              {paginatedVendors.map((vendor) => {
+                const statusMeta = getStatusDisplay(vendor.status);
+                return (
+                  <tr
+                    key={vendor.id}
+                    className="hover:bg-slate-50/60 transition-colors"
+                  >
+                    <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{vendor.id}</td>
+                    <td className="px-5 py-3.5 font-semibold text-slate-900 whitespace-nowrap">{vendor.name}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <p className="text-slate-900 font-medium">{vendor.owner}</p>
+                      <p className="text-[11px] text-slate-500">{vendor.phone}</p>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{vendor.location}</td>
+                    <td className="px-5 py-3.5 text-slate-800 font-semibold whitespace-nowrap">{vendor.capacityPerDay} kg/day</td>
+                    <td className="px-5 py-3.5 font-semibold text-slate-800 whitespace-nowrap">
+                      {vendor.activeOrders > 0 ? (
+                        <span className="text-blue-600 font-bold">{vendor.activeOrders} active</span>
+                      ) : (
+                        <span className="text-slate-400">0 active</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">{vendor.commissionRate}%</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap min-w-[85px] ${statusMeta.classes}`}
+                      >
+                        {statusMeta.label}
                       </span>
-                    )}
-                    {vendor.status === 'Pending Verification' && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                        Pending KYC
-                      </span>
-                    )}
-                    {vendor.status === 'Suspended' && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                        Suspended
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                    <div className="flex items-center justify-end space-x-1.5">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs font-semibold px-2.5"
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap font-bold text-amber-500 flex items-center gap-1 pt-4">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span>{vendor.rating.toFixed(1)}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      <button
                         onClick={() => {
                           setVendorToEdit(vendor);
                           setIsModalOpen(true);
                         }}
+                        className="px-3.5 py-1 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                       >
-                        <Edit3 className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-7 text-[10px] font-bold px-2 ${
-                          vendor.status === 'Active' ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'
-                        }`}
-                        onClick={() => toggleVendorStatus(vendor.id)}
-                      >
-                        {vendor.status === 'Active' ? 'Suspend' : 'Activate'}
-                      </Button>
-                      <button
-                        onClick={() => setVendorToDelete(vendor)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Delete Partner"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        Manage
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
 
-              {filteredVendors.length === 0 && (
+              {paginatedVendors.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
-                    No vendor partners found.
+                  <td colSpan={10} className="text-center py-10 text-slate-400">
+                    No laundry vendors found matching your filter criteria.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Footer with Pagination */}
+        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
+          <p>Showing 1-{paginatedVendors.length} of 32 verified vendor hubs</p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="h-8 px-2.5 text-xs rounded-lg cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
+              Previous
+            </Button>
+            {[1, 2, 3].map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={`h-8 w-8 text-xs p-0 rounded-lg cursor-pointer ${
+                  currentPage === page ? 'bg-blue-600 text-white' : ''
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="h-8 px-2.5 text-xs rounded-lg cursor-pointer"
+            >
+              Next
+              <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -279,21 +397,6 @@ export default function Vendors() {
           setVendorToEdit(null);
         }}
         vendorToEdit={vendorToEdit}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={!!vendorToDelete}
-        onClose={() => setVendorToDelete(null)}
-        onConfirm={() => {
-          if (vendorToDelete) {
-            deleteVendor(vendorToDelete.id);
-            setVendorToDelete(null);
-          }
-        }}
-        title={`Delete Vendor Partner?`}
-        description={`Are you sure you want to delete "${vendorToDelete?.name || 'this vendor'}" operated by ${vendorToDelete?.owner || 'owner'}? Active routing and laundry orders assigned to this partner will be unlinked.`}
-        confirmText="Yes, Delete Partner"
       />
     </div>
   );

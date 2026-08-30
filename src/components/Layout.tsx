@@ -28,10 +28,10 @@ import { BroadcastModal } from '@/components/modals/BroadcastModal';
 
 const sidebarLinks = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { name: 'Orders', path: '/orders', icon: ListOrdered, badgeKey: 'activeOrders' },
   { name: 'Customers', path: '/customers', icon: Users },
   { name: 'Vendors', path: '/vendors', icon: Store },
   { name: 'Riders', path: '/riders', icon: Truck, badgeKey: 'onlineRiders' },
+  { name: 'Orders', path: '/orders', icon: ListOrdered, badgeKey: 'activeOrders' },
   { name: 'Revenue', path: '/revenue', icon: IndianRupee },
   { name: 'Services', path: '/services', icon: Layers },
   { name: 'Promotions', path: '/promotions', icon: TicketPercent },
@@ -133,10 +133,7 @@ export default function Layout() {
           </div>
           <div>
             <h1 className="font-extrabold text-base tracking-tight text-slate-900">Yes Dhobi</h1>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Operations Console</p>
-            </div>
+            <p className="text-[10px] uppercase font-extrabold text-blue-600 tracking-wider">ADMIN PANEL</p>
           </div>
         </div>
         {/* Mobile close button */}
@@ -160,7 +157,7 @@ export default function Layout() {
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${isLiveSimulationActive ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
+            <span className={`w-2.5 h-2.5 rounded-full ${isLiveSimulationActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
             <span>{isLiveSimulationActive ? 'Real-Time Sync: ON' : 'Live Sync: PAUSED'}</span>
           </div>
           <Activity className="w-3.5 h-3.5 opacity-70" />
@@ -181,15 +178,15 @@ export default function Layout() {
               className={({ isActive }) =>
                 `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-blue-50 text-blue-600 font-bold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   <div className="flex items-center space-x-2.5">
-                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-slate-500'}`} />
                     <span>{link.name}</span>
                   </div>
 
@@ -197,7 +194,7 @@ export default function Layout() {
                     <span
                       className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
                         isActive
-                          ? 'bg-white/20 text-white'
+                          ? 'bg-blue-100 text-blue-700'
                           : link.badgeKey === 'openTickets' || link.badgeKey === 'pendingKYC'
                           ? 'bg-amber-100 text-amber-800'
                           : 'bg-blue-100 text-blue-800'
@@ -271,7 +268,7 @@ export default function Layout() {
                 <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search orders, customers..."
+                  placeholder="Search orders, partners, riders..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -335,7 +332,7 @@ export default function Layout() {
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             {/* Quick Live Mode Toggle (Hidden on small mobile) */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-semibold text-slate-600">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="truncate max-w-[130px] lg:max-w-none">Bangalore Central Hub</span>
             </div>
 
@@ -417,7 +414,7 @@ export default function Layout() {
                 />
                 <div className="hidden sm:block text-left">
                   <p className="text-xs font-bold text-slate-900 leading-tight">Zoshua Colah</p>
-                  <p className="text-[10px] text-slate-500 font-semibold">Master Admin</p>
+                  <p className="text-[10px] text-slate-400 font-semibold">Platform Owner</p>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden xs:block" />
               </button>
