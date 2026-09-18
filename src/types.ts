@@ -1,9 +1,11 @@
 export type OrderStatus =
   | 'Pending Pickup'
   | 'Assigned'
+  | 'Picked Up'
   | 'In Laundry'
   | 'Washing'
   | 'Ironing'
+  | 'Quality Check'
   | 'Ready'
   | 'Out for Delivery'
   | 'Delivered'

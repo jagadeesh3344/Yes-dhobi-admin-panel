@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,26 +36,37 @@ import { VerificationModal } from '@/components/modals/VerificationModal';
 import { exportToCsv } from '@/lib/exportCsv';
 import { Order, VerificationItem } from '@/types';
 
-const weeklyData = [
-  { name: 'Mon', orders: 150 },
-  { name: 'Tue', orders: 400 },
-  { name: 'Wed', orders: 350 },
-  { name: 'Thu', orders: 800 },
-  { name: 'Fri', orders: 750 },
-  { name: 'Sat', orders: 1200 },
-  { name: 'Sun', orders: 1500 },
-];
+const CHART_COLORS = ['#2563EB', '#F59E0B', '#06B6D4', '#F43F5E', '#10B981', '#8B5CF6'];
 
-const serviceTypeData = [
-  { name: 'Wash & Fold', percentage: 52, color: '#2563EB' },
-  { name: 'Dry Clean', percentage: 26, color: '#F59E0B' },
-  { name: 'Only Ironing', percentage: 17, color: '#06B6D4' },
-  { name: 'Premium Care', percentage: 5, color: '#F43F5E' },
-];
+/** Orders per weekday for the last 7 days. */
+function buildWeeklyData(orders: Order[]) {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const out: { name: string; orders: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toDateString();
+    out.push({ name: days[d.getDay()], orders: orders.filter((o) => new Date(o.createdAt).toDateString() === key).length });
+  }
+  return out;
+}
+
+/** Share of orders by service (top 4). */
+function buildServiceTypeData(orders: Order[]) {
+  const counts = new Map<string, number>();
+  for (const o of orders) counts.set(o.serviceName, (counts.get(o.serviceName) ?? 0) + 1);
+  const total = orders.length || 1;
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name, n], i) => ({ name, percentage: Math.round((n / total) * 100), color: CHART_COLORS[i % CHART_COLORS.length] }));
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { orders, customers, vendors, riders, verifications } = useData();
+  const weeklyData = useMemo(() => buildWeeklyData(orders), [orders]);
+  const serviceTypeData = useMemo(() => buildServiceTypeData(orders), [orders]);
 
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -103,56 +114,30 @@ export default function Dashboard() {
     }
   };
 
-  const pendingApprovalsList = [
-    {
-      id: 'V-APP-1',
-      name: 'Pune Wash Hub',
-      type: 'Vendor',
-      loc: 'Kothrud, Pune',
-      time: '10 mins ago',
-      phone: '+91 98220 11223',
-      docs: ['Shop License', 'GSTIN', 'Aadhaar Card'],
-      submittedDate: 'Today, 10:15 AM',
-      status: 'Pending Review' as const,
-      city: 'Pune',
-    },
-    {
-      id: 'R-APP-2',
-      name: 'Ajay Devan',
-      type: 'Rider',
-      loc: 'Saket, Delhi',
-      time: '1 hour ago',
-      phone: '+91 98110 55443',
-      docs: ['Driving License', 'RC Book', 'Aadhaar Card'],
-      submittedDate: 'Today, 09:30 AM',
-      status: 'Pending Review' as const,
-      city: 'Delhi',
-    },
-    {
-      id: 'V-APP-3',
-      name: 'Super Dry Cleaners',
-      type: 'Vendor',
-      loc: 'HSR Layout, Bengaluru',
-      time: '2 hours ago',
-      phone: '+91 99001 88776',
-      docs: ['Shop Act Registration', 'Electricity Bill', 'PAN Card'],
-      submittedDate: 'Today, 08:45 AM',
-      status: 'Pending Review' as const,
-      city: 'Bengaluru',
-    },
-    {
-      id: 'R-APP-4',
-      name: 'Sunil Yadav',
-      type: 'Rider',
-      loc: 'Andheri West, Mumbai',
-      time: '5 hours ago',
-      phone: '+91 98200 44332',
-      docs: ['Commercial DL', 'Vehicle Insurance', 'PAN Card'],
-      submittedDate: 'Today, 06:15 AM',
-      status: 'Pending Review' as const,
-      city: 'Mumbai',
-    },
-  ];
+  const pendingApprovalsList = verifications
+    .filter((v) => v.status === 'Pending Review')
+    .slice(0, 5)
+    .map((v) => ({
+      id: v.id,
+      name: v.name,
+      type: v.type,
+      loc: v.phone,
+      time: v.submittedDate,
+      phone: v.phone,
+      docs: v.docs,
+      submittedDate: v.submittedDate,
+      status: v.status,
+      city: '',
+    }));
+
+  // KPI values derived from live data
+  const todayKey = new Date().toDateString();
+  const ordersToday = orders.filter((o) => new Date(o.createdAt).toDateString() === todayKey);
+  const revenueToday = ordersToday.filter((o) => o.status !== 'Cancelled').reduce((sum, o) => sum + o.amount, 0);
+  const activeVendors = vendors.filter((v) => v.status === 'Active').length;
+  const activeRiders = riders.filter((r) => r.status !== 'Offline').length;
+  const activeOrders = orders.filter((o) => o.status !== 'Delivered' && o.status !== 'Cancelled').length;
+  const fmtInr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
   return (
     <div className="space-y-6">
@@ -185,7 +170,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-semibold text-slate-500">Total Orders Today</p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">1,482</h3>
+                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{ordersToday.length.toLocaleString('en-IN')}</h3>
               </div>
               <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                 <Package className="h-5 w-5" />
@@ -193,7 +178,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-3 flex items-center text-xs font-semibold text-emerald-600">
               <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              <span>+12.4% vs last week</span>
+              <span>{activeOrders} orders in progress</span>
             </div>
           </CardContent>
         </Card>
@@ -207,7 +192,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-semibold text-slate-500">Active Customers</p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">28,450</h3>
+                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{customers.length.toLocaleString('en-IN')}</h3>
               </div>
               <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                 <Users className="h-5 w-5" />
@@ -215,7 +200,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-3 flex items-center text-xs font-semibold text-emerald-600">
               <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              <span>+8.2% vs last week</span>
+              <span>{customers.filter((c) => c.status === 'VIP').length} VIP customers</span>
             </div>
           </CardContent>
         </Card>
@@ -229,7 +214,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-semibold text-slate-500">Active Vendors</p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">532</h3>
+                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{activeVendors.toLocaleString('en-IN')}</h3>
               </div>
               <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                 <Store className="h-5 w-5" />
@@ -237,7 +222,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-3 flex items-center text-xs font-semibold text-emerald-600">
               <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              <span>+1.5% vs last month</span>
+              <span>{vendors.length - activeVendors} pending / suspended</span>
             </div>
           </CardContent>
         </Card>
@@ -251,7 +236,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-semibold text-slate-500">Active Riders</p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">1,120</h3>
+                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{activeRiders.toLocaleString('en-IN')}</h3>
               </div>
               <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                 <Truck className="h-5 w-5" />
@@ -259,7 +244,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-3 flex items-center text-xs font-semibold text-rose-500">
               <TrendingDown className="w-3.5 h-3.5 mr-1" />
-              <span>-0.6% vs last week</span>
+              <span>{riders.length - activeRiders} offline</span>
             </div>
           </CardContent>
         </Card>
@@ -273,7 +258,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-semibold text-slate-500">Daily Revenue</p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">₹1,84,500</h3>
+                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{fmtInr(revenueToday)}</h3>
               </div>
               <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                 <IndianRupee className="h-5 w-5" />
@@ -281,7 +266,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-3 flex items-center text-xs font-semibold text-emerald-600">
               <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              <span>+18.5% vs last week</span>
+              <span>{ordersToday.length} orders today</span>
             </div>
           </CardContent>
         </Card>
@@ -303,7 +288,7 @@ export default function Dashboard() {
                 <LineChart data={weeklyData} margin={{ top: 10, right: 20, bottom: 5, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={8} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} ticks={[0, 500, 1000, 1500]} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} allowDecimals={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                   />
@@ -354,10 +339,11 @@ export default function Dashboard() {
             </div>
 
             <div className="flex justify-between items-center text-[11px] font-semibold text-slate-500 mt-2 px-1">
-              <span>Wash: 52%</span>
-              <span>Dry Clean: 26%</span>
-              <span>Iron: 17%</span>
-              <span>Premium: 5%</span>
+              {serviceTypeData.map((d) => (
+                <span key={d.name}>
+                  {d.name}: {d.percentage}%
+                </span>
+              ))}
             </div>
           </CardContent>
         </Card>

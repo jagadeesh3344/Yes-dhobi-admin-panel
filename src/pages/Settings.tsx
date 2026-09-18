@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,22 +8,10 @@ import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { ZoneModal } from '@/components/modals/ZoneModal';
 
-interface ZoneItem {
-  id: string;
-  name: string;
-  city: string;
-  status: 'Operational' | 'Paused';
-}
-
-const initialZones: ZoneItem[] = [
-  { id: '1', name: 'Indiranagar & HSR Layout', city: 'Bangalore', status: 'Operational' },
-  { id: '2', name: 'Andheri West & Bandra', city: 'Mumbai', status: 'Operational' },
-  { id: '3', name: 'Karol Bagh & Dwarka', city: 'Delhi NCR', status: 'Operational' },
-  { id: '4', name: 'Kothrud & Viman Nagar', city: 'Pune', status: 'Operational' },
-];
+import type { ZoneItem } from '@/lib/adapters';
 
 export default function Settings() {
-  const { isLiveSimulationActive, setIsLiveSimulationActive, resetToFactoryDemo, settings, updateSettings } = useData();
+  const { isLiveSimulationActive, setIsLiveSimulationActive, resetToFactoryDemo, settings, updateSettings, zones, addZone, toggleZoneStatus, removeZone } = useData();
   const { showToast } = useToast();
 
   // Form states
@@ -37,10 +25,20 @@ export default function Settings() {
   // Toggle flags
   const [maintenanceMode, setMaintenanceMode] = useState(settings.maintenanceMode || false);
   const [smsAlerts, setSmsAlerts] = useState(settings.smsNotificationsOnDelivery ?? true);
+
+  useEffect(() => {
+    setBrandName(settings.brandName);
+    setSupportEmail(settings.supportEmail);
+    setOperatingHours(settings.operatingHours);
+    setVendorCommission(String(settings.vendorCommissionRate));
+    setRiderBaseFee(String(settings.riderBaseFee));
+    setMinOrderValue(String(settings.minOrderForFreePickup));
+    setMaintenanceMode(settings.maintenanceMode);
+    setSmsAlerts(settings.smsNotificationsOnDelivery);
+  }, [settings]);
   const [autoAssignRiders, setAutoAssignRiders] = useState(true);
 
   // Zones
-  const [zones, setZones] = useState<ZoneItem[]>(initialZones);
   const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
   const [zoneToDelete, setZoneToDelete] = useState<ZoneItem | null>(null);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
@@ -60,35 +58,7 @@ export default function Settings() {
   };
 
   const handleAddZone = (newZone: { name: string; city: string; status: 'Operational' | 'Paused' }) => {
-    setZones((prev) => [
-      ...prev,
-      { id: Date.now().toString(), name: newZone.name, city: newZone.city, status: newZone.status },
-    ]);
-    showToast('Service Zone Added', `Zone "${newZone.name}, ${newZone.city}" is now enabled for order dispatch.`);
-  };
-
-  const toggleZoneStatus = (id: string) => {
-    let targetName = '';
-    let nextStatus = '';
-    setZones((prev) =>
-      prev.map((z) => {
-        if (z.id === id) {
-          const next = z.status === 'Operational' ? 'Paused' : 'Operational';
-          targetName = z.name;
-          nextStatus = next;
-          return { ...z, status: next };
-        }
-        return z;
-      })
-    );
-    if (targetName) {
-      showToast('Zone Status Updated', `${targetName} is now ${nextStatus}.`, 'info');
-    }
-  };
-
-  const removeZone = (id: string) => {
-    setZones((prev) => prev.filter((z) => z.id !== id));
-    showToast('Zone Removed', 'Service zone decommissioned from dispatch routing.', 'info');
+    addZone(newZone);
   };
 
   const handleFactoryReset = () => {

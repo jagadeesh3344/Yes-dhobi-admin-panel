@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/context/ToastContext';
+import { useData } from '@/context/DataContext';
 import { Radio } from 'lucide-react';
 
 interface BroadcastModalProps {
@@ -11,22 +12,24 @@ interface BroadcastModalProps {
 
 export const BroadcastModal: React.FC<BroadcastModalProps> = ({ isOpen, onClose }) => {
   const { showToast } = useToast();
+  const { broadcast } = useData();
   const [targetAudience, setTargetAudience] = useState<'All' | 'Customers' | 'Riders' | 'Vendors'>('All');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [priority, setPriority] = useState<'Normal' | 'High Alert'>('Normal');
 
-  const handleBroadcast = (e: React.FormEvent) => {
+  const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !message.trim()) return;
-
-    showToast(
-      'Push Notification Dispatched',
-      `Alert broadcasted to ${targetAudience} audience successfully.`
-    );
-    setTitle('');
-    setMessage('');
-    onClose();
+    try {
+      const recipients = await broadcast({ targetAudience, priority, title: title.trim(), message: message.trim() });
+      showToast('Push Notification Dispatched', `Alert sent to ${recipients} ${targetAudience === 'All' ? 'users' : targetAudience.toLowerCase()}.`);
+      setTitle('');
+      setMessage('');
+      onClose();
+    } catch (err) {
+      showToast('Broadcast failed', (err as Error).message, 'error');
+    }
   };
 
   return (

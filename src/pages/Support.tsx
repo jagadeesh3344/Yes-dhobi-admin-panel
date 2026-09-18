@@ -21,80 +21,8 @@ export default function Support() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const defaultSupportTickets: SupportTicket[] = [
-    {
-      id: 'TKT-8901',
-      subject: 'Missing 2 Silk Shirts in Order #ORD-8492',
-      by: 'Aaron Mehta',
-      role: 'Customer',
-      category: 'Missing Items',
-      priority: 'High',
-      status: 'Open',
-      createdAt: '12 Apr, 10:30 AM',
-      messages: [{ sender: 'Aaron Mehta', text: 'Garments missing from pickup return parcel.', time: '10:30 AM' }],
-    },
-    {
-      id: 'TKT-8902',
-      subject: 'Delay in Pickup due to Heavy Rain',
-      by: 'Suresh Patel',
-      role: 'Rider',
-      category: 'Delayed Delivery',
-      priority: 'Medium',
-      status: 'In Progress',
-      createdAt: '12 Apr, 09:15 AM',
-      messages: [{ sender: 'Suresh Patel', text: 'Waterlogging at SV road junction causing route delay.', time: '09:15 AM' }],
-    },
-    {
-      id: 'TKT-8903',
-      subject: 'Color bleeding dispute on Designer Saree',
-      by: 'Royal Drycleaners',
-      role: 'Vendor',
-      category: 'Garment Damage',
-      priority: 'Urgent',
-      status: 'Open',
-      createdAt: '11 Apr, 04:45 PM',
-      messages: [{ sender: 'Royal Drycleaners', text: 'Customer saree had pre-existing chemical stains.', time: '04:45 PM' }],
-    },
-    {
-      id: 'TKT-8904',
-      subject: 'Double charge on UPI transaction #TXN-902',
-      by: 'Priya Sharma',
-      role: 'Customer',
-      category: 'Billing & Refund',
-      priority: 'Medium',
-      status: 'Resolved',
-      createdAt: '11 Apr, 02:10 PM',
-      messages: [{ sender: 'Priya Sharma', text: 'Account debited twice for order ORD-8488.', time: '02:10 PM' }],
-    },
-    {
-      id: 'TKT-8905',
-      subject: 'GPS Navigation map pin wrong location',
-      by: 'Vijay Verma',
-      role: 'Rider',
-      category: 'App Issue',
-      priority: 'Low',
-      status: 'Resolved',
-      createdAt: '10 Apr, 11:20 AM',
-      messages: [{ sender: 'Vijay Verma', text: 'Address coordinates were 500m away from entrance.', time: '11:20 AM' }],
-    },
-    {
-      id: 'TKT-8906',
-      subject: 'Special steam press request for wedding suits',
-      by: 'Vikram Singh',
-      role: 'Customer',
-      category: 'Special Request',
-      priority: 'Low',
-      status: 'Open',
-      createdAt: '10 Apr, 08:30 AM',
-      messages: [{ sender: 'Vikram Singh', text: 'Please use extra delicate hanger packing.', time: '08:30 AM' }],
-    },
-  ];
 
-  const combinedTickets = useMemo(() => {
-    const existingIds = new Set(tickets.map((t) => t.id));
-    const uniqueDefault = defaultSupportTickets.filter((d) => !existingIds.has(d.id));
-    return [...tickets, ...uniqueDefault];
-  }, [tickets]);
+  const combinedTickets = tickets;
 
   const filteredTickets = useMemo(() => {
     return combinedTickets.filter((t) => {
@@ -319,7 +247,7 @@ export default function Support() {
 
         {/* Table Footer with Pagination */}
         <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
-          <p>Showing 1-{paginatedTickets.length} of 18 support tickets</p>
+          <p>Showing {filteredTickets.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-{(currentPage - 1) * itemsPerPage + paginatedTickets.length} of {filteredTickets.length} support tickets</p>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
