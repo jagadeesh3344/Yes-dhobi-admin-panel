@@ -3,18 +3,42 @@ import { WashingMachine, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
+import { useData } from '@/context/DataContext';
+import { api, ApiError } from '@/lib/api';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useData();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('admin@yesdhobi.com');
-  const [password, setPassword] = useState('••••••••••••••••');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotSent, setForgotSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/');
+    setError(null);
+    setSubmitting(true);
+    try {
+      await login(email.trim(), password);
+      navigate('/');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to sign in');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleForgot = async () => {
+    setError(null);
+    try {
+      await api.post('/auth/admin/forgot-password', { email: email.trim() });
+      setForgotSent(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to send reset code');
+    }
   };
 
   return (
@@ -87,7 +111,7 @@ export default function Login() {
                 <label className="text-xs font-bold text-slate-900">Password</label>
                 <button
                   type="button"
-                  onClick={() => setForgotSent(true)}
+                  onClick={handleForgot}
                   className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
                 >
                   Forgot Password?
@@ -113,7 +137,12 @@ export default function Login() {
               </div>
               {forgotSent && (
                 <p className="text-[11px] font-semibold text-emerald-600 mt-1">
-                  Reset link sent to security administrator ({email}).
+                  A reset code was emailed to {email}. Use POST /auth/admin/reset-password to set a new password.
+                </p>
+              )}
+              {error && (
+                <p className="text-[11px] font-semibold text-red-600 mt-1" role="alert">
+                  {error}
                 </p>
               )}
             </div>
@@ -132,6 +161,7 @@ export default function Login() {
             </div>
             
             <Button
+              disabled={submitting}
               type="submit"
               className="w-full h-11 text-sm font-bold bg-[#2563eb] hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-600/20 cursor-pointer"
             >

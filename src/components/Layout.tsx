@@ -53,7 +53,19 @@ export default function Layout() {
     clearAllNotifications,
     isLiveSimulationActive,
     setIsLiveSimulationActive,
+    isAuthenticated,
+    currentUser,
+    logout,
+    isLoading,
+    loadError,
+    reload,
   } = useData();
+
+  const isLoginRoute = location.pathname === '/login';
+  useEffect(() => {
+    if (!isAuthenticated && !isLoginRoute) navigate('/login', { replace: true });
+    if (isAuthenticated && isLoginRoute) navigate('/', { replace: true });
+  }, [isAuthenticated, isLoginRoute, navigate]);
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -424,7 +436,7 @@ export default function Layout() {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs font-medium">
                   <div className="px-3 py-2 border-b border-slate-100">
                     <p className="font-bold text-slate-900">Signed in as</p>
-                    <p className="text-[11px] text-slate-500 truncate">admin@yesdhobi.com</p>
+                    <p className="text-[11px] text-slate-500 truncate">{currentUser?.email ?? 'admin'}</p>
                   </div>
                   <NavLink
                     to="/settings"
@@ -434,14 +446,17 @@ export default function Layout() {
                     <Settings className="w-3.5 h-3.5 text-slate-500" />
                     <span>System Settings</span>
                   </NavLink>
-                  <NavLink
-                    to="/login"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      void logout().then(() => navigate('/login'));
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    <span>Switch Operator</span>
-                  </NavLink>
+                    <span>Sign out</span>
+                  </button>
                 </div>
               )}
             </div>
