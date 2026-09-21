@@ -46,3 +46,17 @@ Create an optimized production build:
 ```bash
 npm run build
 ```
+
+## Connecting to the backend
+
+The panel is a pure frontend; all data comes from the Yes Dhobi API in [`jagadeesh3344/yes-dhobi` → `backend/`](https://github.com/jagadeesh3344/yes-dhobi/tree/main/backend).
+
+1. Copy `.env.example` to `.env` and set `VITE_API_URL` to the API base URL:
+   * local development: `http://localhost:4000/api/v1` (run the backend with `npm run dev` there)
+   * production: the deployed API, e.g. `https://api.yesdhobi.com/api/v1` — the AWS deploy script `backend/infra/deploy-frontends.sh` sets this automatically when it builds and publishes the panel.
+2. Sign in with an admin account (the backend seed creates `admin@yesdhobi.com` / `Admin@12345`; change it after first login).
+
+Live updates (orders, riders, tickets, notifications) arrive over Socket.IO from the same API; the "Real-Time Sync" toggle in the header turns them on/off.
+
+* Deployment (AWS): [backend/DEPLOY.md](https://github.com/jagadeesh3344/yes-dhobi/blob/main/backend/DEPLOY.md)
+* Testing the panel: [backend/TESTING.md](https://github.com/jagadeesh3344/yes-dhobi/blob/main/backend/TESTING.md) Part 6
