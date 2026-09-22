@@ -5,10 +5,12 @@
  */
 
 export const API_BASE_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:4000/api/v1';
+  typeof window !== 'undefined' && window.location.protocol === 'https:' && (import.meta.env.VITE_API_URL as string | undefined)?.startsWith('http://')
+    ? '/api/v1'
+    : (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:4000/api/v1';
 
 /** Origin of the API (used for Socket.IO), e.g. http://localhost:4000 */
-export const API_ORIGIN = API_BASE_URL.replace(/\/api\/v\d+$/, '');
+export const API_ORIGIN = API_BASE_URL.startsWith('/') ? (typeof window !== 'undefined' ? window.location.origin : '') : API_BASE_URL.replace(/\/api\/v\d+$/, '');
 
 const ACCESS_KEY = 'yd_admin_access_token';
 const REFRESH_KEY = 'yd_admin_refresh_token';
