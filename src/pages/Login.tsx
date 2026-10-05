@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WashingMachine, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { WashingMachine, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
@@ -43,56 +43,30 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex w-full bg-white">
-      {/* Left side banner */}
-      <div className="w-1/2 bg-gradient-to-br from-[#1b4cb8] via-[#163a9e] to-[#0d2a70] p-12 flex flex-col justify-between text-white hidden lg:flex">
-        <div className="flex items-center space-x-3">
-          <div className="bg-white p-2.5 rounded-xl text-blue-600 shadow-md shadow-black/10">
-            <WashingMachine className="h-6 w-6" />
-          </div>
-          <h1 className="font-extrabold text-2xl tracking-tight">Yes Dhobi</h1>
-        </div>
-        
-        <div className="max-w-md">
-          {/* Laundry Basket Presentation Card */}
-          <div className="bg-white/10 rounded-2xl overflow-hidden mb-8 aspect-[16/10] flex items-center justify-center relative shadow-2xl border border-white/20">
-            <img
-              src="https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=800&auto=format&fit=crop&q=80"
-              alt="Laundry Basket Platform"
-              className="w-full h-full object-cover object-center brightness-95"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent" />
-          </div>
+      {/* Left side: Clean White Login Form with Clear Logo (No Box) */}
+      {/* Left side: Clean White Login Form with Clear Logo */}
+      <div className="flex-1 flex flex-col justify-between px-6 sm:px-12 lg:px-20 py-10 bg-white">
+        <div /> {/* Top spacer to keep layout beautifully centered */}
 
-          <h2 className="text-3xl font-extrabold mb-3 tracking-tight">Platform Back-Office</h2>
-          <p className="text-blue-100 text-sm leading-relaxed opacity-90">
-            Manage partner laundry shops, track riders live, clear verifications, and monitor daily processed orders across India.
-          </p>
-        </div>
-        
-        <div className="text-xs text-blue-200/80 font-medium">
-          &copy; 2026 Yes Dhobi Technologies. All rights reserved.
-        </div>
-      </div>
-      
-      {/* Right side login form */}
-      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-10">
+        {/* Center: Brand Logo & Sign in form grouped with clean spacing */}
         <div className="w-full max-w-sm mx-auto">
-          {/* Mobile brand header */}
-          <div className="flex items-center space-x-2.5 mb-8 lg:hidden">
-            <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-600/20">
-              <WashingMachine className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="font-extrabold text-xl tracking-tight text-slate-900">Yes Dhobi</h1>
-              <p className="text-[10px] uppercase font-bold text-blue-600 tracking-wider">ADMIN PANEL</p>
-            </div>
+          <div className="mb-4">
+            <img
+              src="/yesdhobi-official-logo.png"
+              alt="yes dhobi"
+              className="h-9 sm:h-10 w-auto object-contain select-none"
+            />
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Sign In to Admin</h2>
-            <p className="text-xs sm:text-sm text-slate-500">Enter your corporate credentials to access the back-office dashboard</p>
+          <div className="mb-6">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
+              Sign In to Admin
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Enter your corporate credentials to access the back-office dashboard
+            </p>
           </div>
-          
+
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-900">Work Email Address</label>
@@ -105,7 +79,7 @@ export default function Login() {
                 required
               />
             </div>
-            
+
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-900">Password</label>
@@ -120,7 +94,7 @@ export default function Login() {
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••••••••••"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-11 pr-10 text-xs sm:text-sm bg-slate-50/70 border-slate-200 rounded-xl"
@@ -146,7 +120,7 @@ export default function Login() {
                 </p>
               )}
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -159,7 +133,7 @@ export default function Login() {
                 Keep me signed in on this device
               </label>
             </div>
-            
+
             <Button
               disabled={submitting}
               type="submit"
@@ -168,13 +142,58 @@ export default function Login() {
               Access Dashboard
             </Button>
           </form>
-          
-          <div className="mt-10 p-3.5 bg-amber-50/90 rounded-xl border border-amber-200/80 flex items-start space-x-3 text-amber-900">
-            <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-            <p className="text-xs font-medium leading-snug">
-              This workspace is monitored. Unauthorized login attempts are logged and flagged with security.
-            </p>
+        </div>
+
+        {/* Footer for Left Side */}
+        <div className="w-full max-w-sm mx-auto text-xs text-slate-400 pb-2">
+          &copy; 2026 Yes Dhobi Technologies. All rights reserved.
+        </div>
+      </div>
+
+      {/* Right side: Royal Blue Platform Showcase */}
+      <div className="w-1/2 bg-gradient-to-br from-[#1b4cb8] via-[#163a9e] to-[#0d2a70] p-12 lg:p-16 flex flex-col justify-between text-white hidden lg:flex relative overflow-hidden">
+        {/* Subtle ambient lighting effects */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Spacer */}
+        <div className="relative z-10 h-6" />
+
+        {/* Center: Laundry Presentation Card & Platform Info */}
+        <div className="max-w-md mx-auto w-full relative z-10 my-auto py-6">
+          <div className="bg-white/10 rounded-2xl overflow-hidden mb-8 aspect-[16/10] flex items-center justify-center relative shadow-2xl border border-white/20">
+            <img
+              src="https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=800&auto=format&fit=crop&q=80"
+              alt="Laundry Basket Platform"
+              className="w-full h-full object-cover object-center brightness-95"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
           </div>
+
+          <h2 className="text-3xl font-extrabold mb-3 tracking-tight">Platform Back-Office</h2>
+          <p className="text-blue-100 text-sm leading-relaxed opacity-90 mb-6">
+            Manage partner laundry shops, track riders live, clear verifications, and monitor daily processed orders across India.
+          </p>
+
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/15">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/10">
+              <div className="text-base font-black text-white">4-Pass</div>
+              <div className="text-[11px] text-blue-200">OTP Handover</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/10">
+              <div className="text-base font-black text-white">Real-Time</div>
+              <div className="text-[11px] text-blue-200">Rider GPS</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/10">
+              <div className="text-base font-black text-white">24/7</div>
+              <div className="text-[11px] text-blue-200">Monitoring</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom copyright on right */}
+        <div className="text-xs text-blue-200/80 font-medium relative z-10">
+          Yes Dhobi Enterprise Cloud Platform &bull; v2.4.0
         </div>
       </div>
     </div>

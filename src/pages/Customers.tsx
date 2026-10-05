@@ -145,7 +145,12 @@ export default function Customers() {
                   className="hover:bg-slate-50/60 transition-colors"
                 >
                   <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{customer.id}</td>
-                  <td className="px-5 py-3.5 font-semibold text-slate-900 whitespace-nowrap">{customer.name}</td>
+                  <td className="px-5 py-3.5 whitespace-nowrap">
+                    <div className="font-semibold text-slate-900">{customer.name}</div>
+                    <div className="text-[11px] text-slate-500 font-medium truncate max-w-[220px]">
+                      {[customer.address, customer.city, customer.pincode].filter(Boolean).join(', ') || 'No address saved'}
+                    </div>
+                  </td>
                   <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">{customer.phone}</td>
                   <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{customer.email}</td>
                   <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{customer.totalOrders} orders</td>

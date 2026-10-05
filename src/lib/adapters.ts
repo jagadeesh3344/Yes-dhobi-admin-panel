@@ -96,6 +96,7 @@ export function toCustomer(c: Rec): Customer {
     status: c.status ?? 'Active',
     address: c.address ?? '',
     city: c.city ?? '',
+    pincode: (c.pincode as string) ?? '',
     registeredDate: fmtDate(c.registeredDate),
     lastOrderDate: c.lastOrderDate ? fmtDate(c.lastOrderDate) : undefined,
   };
@@ -350,7 +351,14 @@ export function customerToApi(c: Partial<Customer>) {
   }
   if (c.city !== undefined) out.city = c.city;
   if (c.walletBalance !== undefined) out.walletBalance = Number(c.walletBalance);
-  if (c.address && c.city) out.address = { line1: c.address, city: c.city, pincode: '000000' };
+  if (c.pincode !== undefined) out.pincode = c.pincode;
+  if (c.address !== undefined) {
+    out.address = {
+      line1: c.address,
+      city: c.city || 'Hyderabad',
+      pincode: c.pincode && /^\d{6}$/.test(c.pincode) ? c.pincode : '500013',
+    };
+  }
   return out;
 }
 

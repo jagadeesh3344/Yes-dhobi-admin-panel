@@ -138,20 +138,24 @@ export default function Layout() {
   const renderSidebarNav = () => (
     <>
       {/* Brand Header */}
-      <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100">
-        <div className="flex items-center space-x-3">
-          <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-600/20">
-            <WashingMachine className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-base tracking-tight text-slate-900">Yes Dhobi</h1>
-            <p className="text-[10px] uppercase font-extrabold text-blue-600 tracking-wider">ADMIN PANEL</p>
+      <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100 bg-white">
+        <div className="flex flex-col items-start gap-1">
+          <img
+            src="/yesdhobi-logo.png"
+            alt="Yes Dhobi"
+            className="h-8 sm:h-9 w-auto object-contain select-none"
+          />
+          <div className="flex items-center gap-1.5 pl-0.5">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 border border-blue-200/80 text-[10px] font-extrabold text-blue-700 tracking-wider uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              ADMIN CONSOLE
+            </span>
           </div>
         </div>
         {/* Mobile close button */}
         <button
           onClick={() => setIsMobileSidebarOpen(false)}
-          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
           aria-label="Close sidebar"
         >
           <X className="w-5 h-5" />
@@ -347,6 +351,7 @@ export default function Layout() {
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="truncate max-w-[130px] lg:max-w-none">Bangalore Central Hub</span>
             </div>
+
 
             {/* Notification Bell with Dropdown */}
             <div className="relative" ref={notifRef}>

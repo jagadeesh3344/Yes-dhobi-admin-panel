@@ -41,6 +41,7 @@ export interface Customer {
   status: 'Active' | 'Inactive' | 'VIP';
   address: string;
   city: string;
+  pincode?: string;
   registeredDate: string;
   lastOrderDate?: string;
 }

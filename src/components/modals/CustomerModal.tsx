@@ -17,7 +17,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('Bangalore');
+  const [city, setCity] = useState('Hyderabad');
+  const [pincode, setPincode] = useState('');
   const [walletBalance, setWalletBalance] = useState(0);
   const [status, setStatus] = useState<'Active' | 'Inactive' | 'VIP'>('Active');
 
@@ -27,7 +28,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
       setPhone(customerToEdit.phone);
       setEmail(customerToEdit.email);
       setAddress(customerToEdit.address);
-      setCity(customerToEdit.city);
+      setCity(customerToEdit.city || 'Hyderabad');
+      setPincode(customerToEdit.pincode || '');
       setWalletBalance(customerToEdit.walletBalance);
       setStatus(customerToEdit.status);
     } else {
@@ -35,7 +37,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
       setPhone('');
       setEmail('');
       setAddress('');
-      setCity('Bangalore');
+      setCity('Hyderabad');
+      setPincode('');
       setWalletBalance(100);
       setStatus('Active');
     }
@@ -52,6 +55,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
         email: email || `${name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
         address,
         city,
+        pincode,
         walletBalance: Number(walletBalance),
         status,
       });
@@ -60,8 +64,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
         name,
         phone,
         email: email || `${name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-        address: address || 'Indiranagar, Bangalore',
+        address: address || 'Ramanthapur, Hyderabad',
         city,
+        pincode: pincode || '500013',
         totalOrders: 0,
         walletBalance: Number(walletBalance),
         status,
@@ -76,7 +81,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
       isOpen={isOpen}
       onClose={onClose}
       title={customerToEdit ? `Edit Customer: ${customerToEdit.name}` : 'Add New Customer Profile'}
-      subtitle={customerToEdit ? 'Update contact info and wallet details' : 'Register a new customer for laundry pickup services'}
+      subtitle={customerToEdit ? 'Update contact info, address and wallet details' : 'Register a new customer for laundry pickup services'}
       maxWidth="lg"
       footer={
         <>
@@ -134,18 +139,19 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="w-full text-xs bg-white border border-gray-200 rounded-lg p-2.5"
-            placeholder="Flat 302, Green Glen Layout"
+            placeholder="Flat 302, Green Glen Layout, Ramanthapur"
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">City Hub</label>
             <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="w-full text-xs bg-white border border-gray-200 rounded-lg p-2.5"
+              className="w-full text-xs bg-white border border-gray-200 rounded-lg p-2.5 font-medium"
             >
+              <option value="Hyderabad">Hyderabad</option>
               <option value="Bangalore">Bangalore</option>
               <option value="Mumbai">Mumbai</option>
               <option value="Delhi NCR">Delhi NCR</option>
@@ -153,6 +159,20 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
             </select>
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Pincode</label>
+            <input
+              type="text"
+              maxLength={6}
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))}
+              className="w-full text-xs bg-white border border-gray-200 rounded-lg p-2.5 font-mono"
+              placeholder="500013"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Wallet Credit (₹)</label>
             <input

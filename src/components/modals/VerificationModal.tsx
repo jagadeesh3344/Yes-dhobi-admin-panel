@@ -41,7 +41,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
     for (const [key, url] of Object.entries(item.docUrls)) {
       const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
       if (cleanDoc === cleanKey || cleanDoc.includes(cleanKey) || cleanKey.includes(cleanDoc)) {
-        return url;
+        return url as string;
       }
     }
     return undefined;
