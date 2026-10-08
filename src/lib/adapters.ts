@@ -121,6 +121,7 @@ export function toVendor(v: Rec): Vendor {
 }
 
 export function toRider(r: Rec): Rider {
+  const docs = (r.documents ?? r.fullDocuments ?? {}) as Record<string, string>;
   return {
     id: r.id,
     name: r.name,
@@ -135,6 +136,9 @@ export function toRider(r: Rec): Rider {
     currentLat: r.currentLat ?? undefined,
     currentLng: r.currentLng ?? undefined,
     activeOrderId: r.activeOrderId ?? undefined,
+    documents: docs,
+    drivingLicenseNumber: r.drivingLicenseNumber as string | undefined,
+    onboardingStatus: r.onboardingStatus as string | undefined,
   };
 }
 
@@ -179,9 +183,11 @@ export function toVerification(v: Rec): VerificationItem {
     submittedDate: fmtDate(v.submittedDate),
     docs: v.docs ?? [],
     status: v.status ?? 'Pending Review',
-    docUrls: v.docUrls ?? undefined,
+    docUrls: (v.docUrls ?? v.documents ?? {}) as Record<string, string>,
     rejectionReason: v.rejectionReason ?? undefined,
     idNumber: v.idNumber ?? undefined,
+    riderId: v.riderId ?? undefined,
+    vendorId: v.vendorId ?? undefined,
   };
 }
 

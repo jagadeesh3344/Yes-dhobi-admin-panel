@@ -12,6 +12,18 @@ export const API_BASE_URL: string =
 /** Origin of the API (used for Socket.IO), e.g. http://localhost:4000 */
 export const API_ORIGIN = API_BASE_URL.startsWith('/') ? (typeof window !== 'undefined' ? window.location.origin : '') : API_BASE_URL.replace(/\/api\/v\d+$/, '');
 
+/** Helper to resolve document and attachment URLs (handles relative paths, AWS ALB, and localhost fallbacks). */
+export function resolveDocumentUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  if (url.startsWith('/')) return `${API_ORIGIN}${url}`;
+  if (!/^https?:\/\//i.test(url)) return `${API_ORIGIN}/${url}`;
+  if (url.includes('localhost:4000') && !API_ORIGIN.includes('localhost')) {
+    return url.replace(/https?:\/\/localhost:4000/, API_ORIGIN);
+  }
+  return url;
+}
+
 const ACCESS_KEY = 'yd_admin_access_token';
 const REFRESH_KEY = 'yd_admin_refresh_token';
 const USER_KEY = 'yd_admin_user';

@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Download, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Download, Star, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { RiderModal } from '@/components/modals/RiderModal';
+import { VerificationModal } from '@/components/modals/VerificationModal';
 import { exportToCsv } from '@/lib/exportCsv';
-import { Rider } from '@/types';
+import { Rider, VerificationItem } from '@/types';
 
 export default function Riders() {
-  const { riders } = useData();
+  const { riders, verifications } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState('All');
@@ -16,6 +17,8 @@ export default function Riders() {
   const [selectedZone, setSelectedZone] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [riderToEdit, setRiderToEdit] = useState<Rider | null>(null);
+  const [selectedVerification, setSelectedVerification] = useState<VerificationItem | null>(null);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -90,6 +93,39 @@ export default function Riders() {
       label: 'Offline',
       classes: 'bg-slate-100 text-slate-600 border-slate-200',
     };
+  };
+
+  const handleInspectDocs = (rider: Rider) => {
+    // Check if an existing verification record matches this rider
+    const matched = verifications.find(
+      (v) => (v.riderId && v.riderId === rider.id) || v.phone === rider.phone || v.name.toLowerCase() === rider.name.toLowerCase()
+    );
+
+    if (matched) {
+      setSelectedVerification({
+        ...matched,
+        docUrls: {
+          ...(rider.documents || {}),
+          ...(matched.docUrls || {}),
+        },
+        idNumber: matched.idNumber || rider.drivingLicenseNumber,
+      });
+    } else {
+      const docsObj = (rider.documents || {}) as Record<string, string>;
+      setSelectedVerification({
+        id: rider.id,
+        name: rider.name,
+        type: 'Rider',
+        phone: rider.phone,
+        submittedDate: 'Active Profile',
+        status: 'Approved',
+        docs: Object.keys(docsObj),
+        docUrls: docsObj,
+        idNumber: rider.drivingLicenseNumber,
+        riderId: rider.id,
+      });
+    }
+    setIsVerificationModalOpen(true);
   };
 
   return (
@@ -233,15 +269,26 @@ export default function Riders() {
                       <span>{rider.rating.toFixed(1)}</span>
                     </td>
                     <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          setRiderToEdit(rider);
-                          setIsModalOpen(true);
-                        }}
-                        className="px-3.5 py-1 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                      >
-                        Manage
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleInspectDocs(rider)}
+                          className="h-7 text-xs font-semibold px-2.5 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          Inspect Docs
+                        </Button>
+                        <button
+                          onClick={() => {
+                            setRiderToEdit(rider);
+                            setIsModalOpen(true);
+                          }}
+                          className="px-3 py-1 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                        >
+                          Manage
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -260,7 +307,7 @@ export default function Riders() {
 
         {/* Table Footer with Pagination */}
         <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
-          <p>Showing 1-{paginatedRiders.length} of 48 delivery partners</p>
+          <p>Showing 1-{paginatedRiders.length} of {filteredRiders.length} delivery partners</p>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -307,6 +354,16 @@ export default function Riders() {
           setRiderToEdit(null);
         }}
         riderToEdit={riderToEdit}
+      />
+
+      {/* Verification Inspection Modal for Rider */}
+      <VerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => {
+          setIsVerificationModalOpen(false);
+          setSelectedVerification(null);
+        }}
+        item={selectedVerification}
       />
     </div>
   );

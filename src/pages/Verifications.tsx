@@ -11,7 +11,7 @@ import { exportToCsv } from '@/lib/exportCsv';
 import { useToast } from '@/context/ToastContext';
 
 export default function Verifications() {
-  const { verifications, approveVerification } = useData();
+  const { verifications, riders, approveVerification } = useData();
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<'All' | 'Vendor' | 'Rider'>('All');
@@ -61,6 +61,28 @@ export default function Verifications() {
         RejectionNotes: v.rejectionReason || 'None',
       }))
     );
+  };
+
+  const handleInspectDocs = (v: VerificationItem) => {
+    if (v.type === 'Rider') {
+      const matchingRider = riders.find(
+        (r) => (v.riderId && v.riderId === r.id) || r.phone === v.phone || r.name.toLowerCase() === v.name.toLowerCase()
+      );
+      if (matchingRider && matchingRider.documents) {
+        setSelectedVerification({
+          ...v,
+          docUrls: {
+            ...(matchingRider.documents || {}),
+            ...(v.docUrls || {}),
+          },
+          idNumber: v.idNumber || matchingRider.drivingLicenseNumber,
+        });
+        setIsModalOpen(true);
+        return;
+      }
+    }
+    setSelectedVerification(v);
+    setIsModalOpen(true);
   };
 
   return (
@@ -244,10 +266,7 @@ export default function Verifications() {
                         variant="outline"
                         size="sm"
                         className="h-7 text-xs font-semibold px-2.5"
-                        onClick={() => {
-                          setSelectedVerification(v);
-                          setIsModalOpen(true);
-                        }}
+                        onClick={() => handleInspectDocs(v)}
                       >
                         <Eye className="w-3 h-3 mr-1" />
                         Inspect Docs

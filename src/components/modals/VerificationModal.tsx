@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { VerificationItem } from '@/types';
 import { useData } from '@/context/DataContext';
-import { ShieldCheck, FileText, CheckCircle2, XCircle, AlertTriangle, ExternalLink, Eye, Maximize2 } from 'lucide-react';
+import { ShieldCheck, FileText, CheckCircle2, XCircle, AlertTriangle, ExternalLink, Eye, Maximize2, ImageOff } from 'lucide-react';
+import { resolveDocumentUrl } from '@/lib/api';
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
   const [rejectReason, setRejectReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ title: string; url: string } | null>(null);
+  const [brokenUrls, setBrokenUrls] = useState<Record<string, boolean>>({});
 
   if (!item) return null;
 
@@ -47,6 +49,74 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
     return undefined;
   };
 
+  const formatTitle = (key: string): string => {
+    const lower = key.toLowerCase();
+    if (lower.includes('driving') || lower.includes('license')) return 'Driving License';
+    if (lower.includes('aadhaarfront') || (lower.includes('aadhaar') && lower.includes('front'))) return 'Aadhaar Card (Front)';
+    if (lower.includes('aadhaarback') || (lower.includes('aadhaar') && lower.includes('back'))) return 'Aadhaar Card (Back)';
+    if (lower.includes('aadhaar')) return 'Aadhaar Card';
+    if (lower.includes('panfront') || (lower.includes('pan') && lower.includes('front'))) return 'PAN Card (Front)';
+    if (lower.includes('pan')) return 'PAN Card';
+    if (lower.includes('selfie')) return 'Identity Verification Selfie';
+    if (lower.includes('profile')) return 'Profile Avatar / Photo';
+    if (lower.includes('shop')) return 'Shop Photo / Storefront';
+    if (lower.includes('gst')) return 'GST Registration Certificate';
+    if (lower.includes('trade')) return 'Trade License Certificate';
+    if (lower.includes('labour')) return 'Labour License Proof';
+    if (lower.includes('cheque')) return 'Cancelled Cheque / Bank Passbook';
+
+    return key
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/[_-]+/g, ' ')
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
+
+  // Comprehensive list of documents merging docUrls and docs
+  const displayDocs = useMemo(() => {
+    const list: { title: string; url?: string; key: string }[] = [];
+    const seen = new Set<string>();
+
+    // 1. Gather all actual docUrls first
+    if (item.docUrls && typeof item.docUrls === 'object') {
+      for (const [rawKey, rawUrl] of Object.entries(item.docUrls)) {
+        if (typeof rawUrl === 'string' && rawUrl.trim()) {
+          const resolved = resolveDocumentUrl(rawUrl);
+          const title = formatTitle(rawKey);
+          list.push({ title, url: resolved, key: rawKey });
+          seen.add(rawKey.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          seen.add(title.toLowerCase().replace(/[^a-z0-9]/g, ''));
+        }
+      }
+    }
+
+    // 2. Add any items from item.docs that weren't captured by docUrls
+    for (const doc of item.docs || []) {
+      const clean = doc.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!seen.has(clean)) {
+        const rawUrl = getDocUrl(doc);
+        const resolved = resolveDocumentUrl(rawUrl);
+        const title = formatTitle(doc);
+        list.push({ title, url: resolved, key: doc });
+        seen.add(clean);
+        seen.add(title.toLowerCase().replace(/[^a-z0-9]/g, ''));
+      }
+    }
+
+    // 3. Fallback for Riders if no documents were uploaded yet
+    if (item.type === 'Rider' && list.length === 0) {
+      list.push(
+        { title: 'Driving License', key: 'drivingLicense' },
+        { title: 'Aadhaar Card (Front)', key: 'aadhaarFront' },
+        { title: 'Aadhaar Card (Back)', key: 'aadhaarBack' },
+        { title: 'Identity Verification Selfie', key: 'selfie' },
+      );
+    }
+
+    return list;
+  }, [item]);
+
   const isImageUrl = (url?: string) => {
     if (!url) return false;
     return (
@@ -55,7 +125,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
       url.includes('photo') ||
       url.includes('aadhaar') ||
       url.includes('pan') ||
-      url.includes('license')
+      url.includes('license') ||
+      url.includes('selfie') ||
+      url.includes('uploads')
     );
   };
 
@@ -74,7 +146,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
                 <div className="w-full flex items-center justify-between gap-2">
                   <input
                     type="text"
-                    placeholder="Reason for rejection (e.g. Blurred Aadhaar photo, invalid PAN)..."
+                    placeholder="Reason for rejection (e.g. Blurred Aadhaar photo, invalid driving license)..."
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     className="flex-1 text-xs border border-red-300 rounded-lg p-2 focus:ring-red-500"
@@ -127,7 +199,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
           {/* Applicant Profile Details */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
             <div>
-              <span className="text-slate-500 block mb-0.5 text-[11px]">Shop / Business</span>
+              <span className="text-slate-500 block mb-0.5 text-[11px]">Applicant Name</span>
               <span className="font-bold text-slate-900 text-sm">{item.name}</span>
             </div>
             <div>
@@ -148,15 +220,16 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Uploaded Verification Documents ({item.docs.length})
+                Uploaded Verification Documents ({displayDocs.length})
               </h4>
               <span className="text-[11px] text-slate-400">Click any document to inspect full size</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto p-1">
-              {item.docs.map((doc, idx) => {
-                const url = getDocUrl(doc);
-                const hasImage = isImageUrl(url);
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto p-1">
+              {displayDocs.map((docItem, idx) => {
+                const url = docItem.url;
+                const isImage = isImageUrl(url);
+                const isBroken = url ? brokenUrls[url] : false;
 
                 return (
                   <div
@@ -168,22 +241,27 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
                         <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
                           <FileText className="w-3.5 h-3.5" />
                         </div>
-                        <p className="text-xs font-bold text-slate-900">{doc}</p>
+                        <p className="text-xs font-bold text-slate-900 truncate max-w-[150px]">{docItem.title}</p>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                        Uploaded
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          url ? 'text-emerald-700 bg-emerald-50' : 'text-slate-600 bg-slate-100'
+                        }`}
+                      >
+                        {url ? 'Available' : 'Pending'}
                       </span>
                     </div>
 
                     {/* Preview Thumbnail if image or URL exists */}
-                    {url && hasImage ? (
+                    {url && isImage && !isBroken ? (
                       <div
-                        onClick={() => setPreviewImage({ title: doc, url })}
+                        onClick={() => setPreviewImage({ title: docItem.title, url })}
                         className="relative group h-32 w-full bg-slate-100 rounded-lg overflow-hidden border border-slate-200 cursor-pointer flex items-center justify-center my-1.5"
                       >
                         <img
                           src={url}
-                          alt={doc}
+                          alt={docItem.title}
+                          onError={() => setBrokenUrls((prev) => ({ ...prev, [url]: true }))}
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                         <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-xs font-semibold">
@@ -191,14 +269,19 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
                           <span>Inspect Full Size</span>
                         </div>
                       </div>
-                    ) : url ? (
+                    ) : url && !isBroken ? (
                       <div className="h-20 w-full bg-slate-50 rounded-lg border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 my-1.5 text-xs">
                         <FileText className="w-6 h-6 text-slate-400 mb-1" />
-                        <span>PDF / Certified Attachment</span>
+                        <span>PDF / Attached Document</span>
+                      </div>
+                    ) : isBroken ? (
+                      <div className="h-20 w-full bg-slate-50 rounded-lg border border-slate-200 flex flex-col items-center justify-center text-slate-400 my-1.5 text-xs">
+                        <ImageOff className="w-5 h-5 mb-1 text-slate-400" />
+                        <span className="text-[11px]">Preview unavailable</span>
                       </div>
                     ) : (
                       <div className="h-16 w-full bg-slate-50 rounded-lg border border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-[11px] my-1.5">
-                        Document reference scanned
+                        Awaiting partner upload
                       </div>
                     )}
 
@@ -207,7 +290,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
                       <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-1">
                         <button
                           type="button"
-                          onClick={() => setPreviewImage({ title: doc, url })}
+                          onClick={() => setPreviewImage({ title: docItem.title, url })}
                           className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <Eye className="w-3 h-3" />
@@ -220,7 +303,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
                           className="text-[11px] text-slate-500 hover:text-slate-900 font-medium flex items-center gap-1"
                         >
                           <ExternalLink className="w-3 h-3" />
-                          Open File
+                          Open High-Res
                         </a>
                       </div>
                     ) : (

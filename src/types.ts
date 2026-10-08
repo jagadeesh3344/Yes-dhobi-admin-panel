@@ -76,6 +76,9 @@ export interface Rider {
   currentLat?: number;
   currentLng?: number;
   activeOrderId?: string;
+  documents?: Record<string, string>;
+  drivingLicenseNumber?: string;
+  onboardingStatus?: string;
 }
 
 export interface ServiceCategory {
@@ -121,6 +124,8 @@ export interface VerificationItem {
   docUrls?: { [key: string]: string };
   rejectionReason?: string;
   idNumber?: string;
+  riderId?: string;
+  vendorId?: string;
 }
 
 export interface SupportTicket {
