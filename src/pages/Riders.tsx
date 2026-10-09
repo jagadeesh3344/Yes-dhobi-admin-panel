@@ -96,27 +96,31 @@ export default function Riders() {
   };
 
   const handleInspectDocs = (rider: Rider) => {
+    if (!rider) return;
     // Check if an existing verification record matches this rider
     const matched = verifications.find(
-      (v) => (v.riderId && v.riderId === rider.id) || v.phone === rider.phone || v.name.toLowerCase() === rider.name.toLowerCase()
+      (v) =>
+        (v.riderId && v.riderId === rider.id) ||
+        (v.phone && rider.phone && v.phone === rider.phone) ||
+        (v.name && rider.name && v.name.toLowerCase() === rider.name.toLowerCase())
     );
 
     if (matched) {
       setSelectedVerification({
         ...matched,
         docUrls: {
-          ...(rider.documents || {}),
-          ...(matched.docUrls || {}),
+          ...(typeof rider.documents === 'object' && rider.documents ? rider.documents : {}),
+          ...(typeof matched.docUrls === 'object' && matched.docUrls ? matched.docUrls : {}),
         },
         idNumber: matched.idNumber || rider.drivingLicenseNumber,
       });
     } else {
-      const docsObj = (rider.documents || {}) as Record<string, string>;
+      const docsObj = (typeof rider.documents === 'object' && rider.documents ? rider.documents : {}) as Record<string, string>;
       setSelectedVerification({
-        id: rider.id,
-        name: rider.name,
+        id: rider.id || 'RIDER',
+        name: rider.name || 'Rider',
         type: 'Rider',
-        phone: rider.phone,
+        phone: rider.phone || '',
         submittedDate: 'Active Profile',
         status: 'Approved',
         docs: Object.keys(docsObj),

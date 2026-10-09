@@ -19,14 +19,23 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
   const [previewImage, setPreviewImage] = useState<{ title: string; url: string } | null>(null);
   const [brokenUrls, setBrokenUrls] = useState<Record<string, boolean>>({});
 
-  if (!item) return null;
+  // Reset local state when modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      setIsRejecting(false);
+      setRejectReason('');
+      setPreviewImage(null);
+    }
+  }, [isOpen]);
 
   const handleApprove = () => {
+    if (!item) return;
     approveVerification(item.id);
     onClose();
   };
 
   const handleReject = () => {
+    if (!item) return;
     if (!rejectReason.trim()) {
       return;
     }
@@ -37,19 +46,21 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
   };
 
   // Helper to match doc title with docUrls key
-  const getDocUrl = (docName: string): string | undefined => {
-    if (!item.docUrls) return undefined;
-    const cleanDoc = docName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const getDocUrl = (docName?: string): string | undefined => {
+    if (!item?.docUrls || typeof item.docUrls !== 'object' || !docName) return undefined;
+    const cleanDoc = String(docName).toLowerCase().replace(/[^a-z0-9]/g, '');
     for (const [key, url] of Object.entries(item.docUrls)) {
-      const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!key) continue;
+      const cleanKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
       if (cleanDoc === cleanKey || cleanDoc.includes(cleanKey) || cleanKey.includes(cleanDoc)) {
-        return url as string;
+        return typeof url === 'string' ? url : undefined;
       }
     }
     return undefined;
   };
 
-  const formatTitle = (key: string): string => {
+  const formatTitle = (key?: unknown): string => {
+    if (!key || typeof key !== 'string') return 'Document';
     const lower = key.toLowerCase();
     if (lower.includes('driving') || lower.includes('license')) return 'Driving License';
     if (lower.includes('aadhaarfront') || (lower.includes('aadhaar') && lower.includes('front'))) return 'Aadhaar Card (Front)';
@@ -73,8 +84,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
       .join(' ');
   };
 
-  // Comprehensive list of documents merging docUrls and docs
+  // Comprehensive list of documents merging docUrls and docs (unconditionally registered hook)
   const displayDocs = useMemo(() => {
+    if (!item) return [];
     const list: { title: string; url?: string; key: string }[] = [];
     const seen = new Set<string>();
 
@@ -92,7 +104,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
     }
 
     // 2. Add any items from item.docs that weren't captured by docUrls
-    for (const doc of item.docs || []) {
+    const rawDocs = Array.isArray(item.docs) ? item.docs : [];
+    for (const doc of rawDocs) {
+      if (!doc || typeof doc !== 'string') continue;
       const clean = doc.toLowerCase().replace(/[^a-z0-9]/g, '');
       if (!seen.has(clean)) {
         const rawUrl = getDocUrl(doc);
@@ -130,6 +144,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({ isOpen, on
       url.includes('uploads')
     );
   };
+
+  // Safe early exit AFTER all hooks are registered
+  if (!isOpen || !item) return null;
 
   return (
     <>

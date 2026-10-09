@@ -64,16 +64,20 @@ export default function Verifications() {
   };
 
   const handleInspectDocs = (v: VerificationItem) => {
+    if (!v) return;
     if (v.type === 'Rider') {
       const matchingRider = riders.find(
-        (r) => (v.riderId && v.riderId === r.id) || r.phone === v.phone || r.name.toLowerCase() === v.name.toLowerCase()
+        (r) =>
+          (v.riderId && v.riderId === r.id) ||
+          (v.phone && r.phone && v.phone === r.phone) ||
+          (v.name && r.name && v.name.toLowerCase() === r.name.toLowerCase())
       );
       if (matchingRider && matchingRider.documents) {
         setSelectedVerification({
           ...v,
           docUrls: {
-            ...(matchingRider.documents || {}),
-            ...(v.docUrls || {}),
+            ...(typeof matchingRider.documents === 'object' ? matchingRider.documents : {}),
+            ...(typeof v.docUrls === 'object' ? v.docUrls : {}),
           },
           idNumber: v.idNumber || matchingRider.drivingLicenseNumber,
         });
