@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import { GoLiveLaunchpad } from './components/GoLiveLaunchpad';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
@@ -23,6 +24,30 @@ export default function App() {
         <DataProvider>
           <Router>
             <Routes>
+              {/* Standalone client demo and ceremony routes */}
+              <Route
+                path="/launch"
+                element={
+                  <GoLiveLaunchpad
+                    onEnterDashboard={() => {
+                      sessionStorage.setItem('yd_has_gone_live', 'true');
+                      window.location.href = '/';
+                    }}
+                  />
+                }
+              />
+              <Route
+                path="/go-live"
+                element={
+                  <GoLiveLaunchpad
+                    onEnterDashboard={() => {
+                      sessionStorage.setItem('yd_has_gone_live', 'true');
+                      window.location.href = '/';
+                    }}
+                  />
+                }
+              />
+
               <Route path="/" element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="customers" element={<Customers />} />

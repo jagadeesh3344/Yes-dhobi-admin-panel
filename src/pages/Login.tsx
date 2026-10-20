@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WashingMachine, Eye, EyeOff } from 'lucide-react';
+import { WashingMachine, Eye, EyeOff, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
@@ -43,13 +43,29 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex w-full bg-white">
-      {/* Left side: Clean White Login Form with Clear Logo (No Box) */}
       {/* Left side: Clean White Login Form with Clear Logo */}
       <div className="flex-1 flex flex-col justify-between px-6 sm:px-12 lg:px-20 py-10 bg-white">
-        <div /> {/* Top spacer to keep layout beautifully centered */}
+        {/* Top bar with quick Launch Ceremony access */}
+        <div className="w-full flex items-center justify-between pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-mono font-bold text-slate-500 uppercase tracking-wider">
+              YES DHOBI ADMIN PORTAL
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/launch')}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white text-xs font-extrabold tracking-wide shadow-md shadow-emerald-500/25 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+          >
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <Rocket className="w-3.5 h-3.5 text-white group-hover:-translate-y-0.5 transition-transform" />
+            <span>Go Live</span>
+          </button>
+        </div>
 
         {/* Center: Brand Logo & Sign in form grouped with clean spacing */}
-        <div className="w-full max-w-sm mx-auto">
+        <div className="w-full max-w-sm mx-auto my-auto py-8">
           <div className="mb-4">
             <img
               src="/yesdhobi-official-logo.png"

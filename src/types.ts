@@ -60,6 +60,9 @@ export interface Vendor {
   rating: number;
   totalRevenue: number;
   joinedDate: string;
+  lat?: number;
+  lng?: number;
+  exactShopLocation?: string;
 }
 
 export interface Rider {

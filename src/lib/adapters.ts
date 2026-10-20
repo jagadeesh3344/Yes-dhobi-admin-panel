@@ -117,6 +117,9 @@ export function toVendor(v: Rec): Vendor {
     rating: v.rating ?? 0,
     totalRevenue: Number(v.totalRevenue ?? 0),
     joinedDate: fmtDate(v.joinedDate),
+    lat: typeof v.latitude === 'number' ? v.latitude : (typeof v.lat === 'number' ? v.lat : undefined),
+    lng: typeof v.longitude === 'number' ? v.longitude : (typeof v.lng === 'number' ? v.lng : undefined),
+    exactShopLocation: v.exactShopLocation ?? v.shopAddress ?? undefined,
   };
 }
 
@@ -381,6 +384,8 @@ export function vendorToApi(v: Partial<Vendor>) {
   if (v.capacityPerDay !== undefined) out.capacityPerDay = Number(v.capacityPerDay);
   if (v.commissionRate !== undefined) out.commissionRate = Number(v.commissionRate);
   if (v.status !== undefined) out.status = v.status;
+  if (v.lat !== undefined) out.latitude = v.lat;
+  if (v.lng !== undefined) out.longitude = v.lng;
   return out;
 }
 

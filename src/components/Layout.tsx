@@ -22,9 +22,12 @@ import {
   ChevronDown,
   X,
   Menu,
+  Rocket,
+  Sparkles,
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { BroadcastModal } from '@/components/modals/BroadcastModal';
+import { GoLiveLaunchpad } from '@/components/GoLiveLaunchpad';
 
 const sidebarLinks = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -61,11 +64,21 @@ export default function Layout() {
     reload,
   } = useData();
 
+  // Starting Loading Page / Launchpad State
+  const [showLaunchpad, setShowLaunchpad] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('launch') === 'true') return true;
+    return sessionStorage.getItem('yd_has_gone_live') !== 'true';
+  });
+
   const isLoginRoute = location.pathname === '/login';
   useEffect(() => {
-    if (!isAuthenticated && !isLoginRoute) navigate('/login', { replace: true });
-    if (isAuthenticated && isLoginRoute) navigate('/', { replace: true });
-  }, [isAuthenticated, isLoginRoute, navigate]);
+    if (!showLaunchpad) {
+      if (!isAuthenticated && !isLoginRoute) navigate('/login', { replace: true });
+      if (isAuthenticated && isLoginRoute) navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, isLoginRoute, navigate, showLaunchpad]);
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -99,6 +112,20 @@ export default function Layout() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (showLaunchpad) {
+    return (
+      <GoLiveLaunchpad
+        onEnterDashboard={() => {
+          sessionStorage.setItem('yd_has_gone_live', 'true');
+          setShowLaunchpad(false);
+          if (!isAuthenticated) {
+            navigate('/login');
+          }
+        }}
+      />
+    );
+  }
 
   if (location.pathname === '/login') {
     return <Outlet />;
@@ -163,7 +190,7 @@ export default function Layout() {
       </div>
 
       {/* Live System Status Pill */}
-      <div className="px-3 sm:px-4 pt-3 pb-1">
+      <div className="px-3 sm:px-4 pt-3 pb-1.5">
         <button
           onClick={() => setIsLiveSimulationActive((prev) => !prev)}
           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
@@ -177,6 +204,25 @@ export default function Layout() {
             <span>{isLiveSimulationActive ? 'Real-Time Sync: ON' : 'Live Sync: PAUSED'}</span>
           </div>
           <Activity className="w-3.5 h-3.5 opacity-70" />
+        </button>
+      </div>
+
+      {/* Launch Control / Go Live Ceremony Replay Button */}
+      <div className="px-3 sm:px-4 pb-2">
+        <button
+          onClick={() => {
+            setShowLaunchpad(true);
+            setIsMobileSidebarOpen(false);
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border border-cyan-200 bg-gradient-to-r from-cyan-50 via-blue-50 to-emerald-50 hover:from-cyan-100 hover:to-emerald-100 text-slate-800 transition-all cursor-pointer shadow-2xs group"
+        >
+          <div className="flex items-center gap-2">
+            <Rocket className="w-4 h-4 text-cyan-600 group-hover:-translate-y-0.5 group-hover:text-cyan-700 transition-transform" />
+            <span className="font-extrabold text-slate-800">Go Live</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded-md bg-emerald-500 text-white text-[9px] font-black uppercase tracking-wider animate-pulse">
+            LIVE
+          </span>
         </button>
       </div>
 
@@ -349,8 +395,21 @@ export default function Layout() {
             {/* Quick Live Mode Toggle (Hidden on small mobile) */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-semibold text-slate-600">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="truncate max-w-[130px] lg:max-w-none">Bangalore Central Hub</span>
+              <span className="truncate max-w-[130px] lg:max-w-none">Hyderabad Central Hub</span>
             </div>
+
+            {/* Glowing Go Live Ceremony Button */}
+            <button
+              onClick={() => setShowLaunchpad(true)}
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-300 text-emerald-800 hover:border-emerald-400 hover:shadow-xs text-xs font-bold transition-all cursor-pointer group"
+              title="Replay 'Yes Dhobi is Officially Live' Launch Ceremony"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse group-hover:scale-125 transition-transform" />
+              <span className="font-extrabold text-[11px] sm:text-xs text-slate-800 tracking-tight">
+                YES DHOBI IS LIVE
+              </span>
+              <Rocket className="w-3.5 h-3.5 text-blue-600 group-hover:-translate-y-0.5 transition-transform" />
+            </button>
 
 
             {/* Notification Bell with Dropdown */}
