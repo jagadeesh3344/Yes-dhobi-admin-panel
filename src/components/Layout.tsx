@@ -76,16 +76,19 @@ export default function Layout() {
   const userEmail = (currentUser?.email || '').toLowerCase().trim();
   const isVastra = userEmail.includes('vastrasolutions') || (currentUser?.name || '').toLowerCase().includes('vastra');
   const isAnirudh = userEmail.includes('anirudh') || (currentUser?.name || '').toLowerCase().includes('anirudh');
+  const isKanthgade = userEmail.includes('kanthgade') || (currentUser?.name || '').toLowerCase().includes('kanthgade');
 
   const displayName = isVastra
     ? 'Vastra Solutions'
     : isAnirudh
     ? 'Anirudh'
+    : isKanthgade
+    ? 'Kanthgade'
     : currentUser?.name && currentUser.name !== 'Yes Dhobi Admin'
     ? currentUser.name
     : 'Admin Partner';
 
-  const displayRole = isVastra || isAnirudh ? 'Partner' : currentUser?.role || 'Administrator';
+  const displayRole = isVastra || isAnirudh || isKanthgade ? 'Partner' : currentUser?.role || 'Administrator';
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
@@ -443,10 +446,12 @@ export default function Layout() {
                       ? 'bg-gradient-to-tr from-blue-700 to-indigo-600 text-white ring-blue-100'
                       : isAnirudh
                       ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 text-white ring-sky-100'
+                      : isKanthgade
+                      ? 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white ring-emerald-100'
                       : 'bg-gradient-to-tr from-slate-700 to-slate-900 text-white ring-slate-100'
                   }`}
                 >
-                  {isVastra ? 'VS' : isAnirudh ? 'A' : displayName.substring(0, 2).toUpperCase()}
+                  {isVastra ? 'VS' : isAnirudh ? 'A' : isKanthgade ? 'KG' : displayName.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-xs font-bold text-slate-900 leading-tight">{displayName}</p>

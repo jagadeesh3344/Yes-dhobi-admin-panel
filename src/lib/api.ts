@@ -169,6 +169,11 @@ export const ADMIN_PARTNERS = [
     password: 'Anirudh@2026',
     name: 'Anirudh',
   },
+  {
+    email: 'kanthgade7@gmail.com',
+    password: 'Kanthgade@777',
+    name: 'Kanthgade',
+  },
 ];
 
 export async function loginAdmin(email: string, password: string): Promise<AdminUser> {
@@ -186,6 +191,8 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
         data.user.name = 'Vastra Solutions';
       } else if (normEmail === 'anirudhailaboina@gmail.com') {
         data.user.name = 'Anirudh';
+      } else if (normEmail === 'kanthgade7@gmail.com') {
+        data.user.name = 'Kanthgade';
       }
     }
     tokenStore.set(data);
@@ -198,7 +205,7 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
 
     if (partner) {
       const partnerUser: AdminUser = {
-        id: normEmail === 'vastrasolutionspvtltd@gmail.com' ? 'admin_vastra' : 'admin_anirudh',
+        id: normEmail === 'vastrasolutionspvtltd@gmail.com' ? 'admin_vastra' : normEmail === 'anirudhailaboina@gmail.com' ? 'admin_anirudh' : 'admin_kanthgade',
         name: partner.name,
         email: partner.email,
         role: 'ADMIN',
