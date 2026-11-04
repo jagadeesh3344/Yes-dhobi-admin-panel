@@ -115,6 +115,9 @@ async function request<T>(method: string, path: string, body?: unknown, retry = 
   }
 
   if (res.status === 401 && retry && tokenStore.refresh && !path.startsWith('/auth/')) {
+    if (tokenStore.access?.startsWith('partner_access_')) {
+      throw new ApiError(401, 'UNAUTHORIZED', 'Operating in partner preview mode.');
+    }
     if (await refreshTokens()) return request<T>(method, path, body, false);
     tokenStore.clear();
     window.dispatchEvent(new Event('yd:logout'));
@@ -155,10 +158,62 @@ export async function getAll<T>(path: string, limit = 200): Promise<T[]> {
   return out;
 }
 
+export const ADMIN_PARTNERS = [
+  {
+    email: 'vastrasolutionspvtltd@gmail.com',
+    password: 'Yesdhobi@1575',
+    name: 'Vastra Solutions',
+  },
+  {
+    email: 'anirudhailaboina@gmail.com',
+    password: 'Anirudh@2026',
+    name: 'Anirudh',
+  },
+];
+
 export async function loginAdmin(email: string, password: string): Promise<AdminUser> {
-  const data = await api.post<{ accessToken: string; refreshToken: string; user: AdminUser }>('/auth/admin/login', { email, password });
-  tokenStore.set(data);
-  return data.user;
+  const normEmail = email.trim().toLowerCase();
+  const trimmedPassword = password.trim();
+
+  // Try live backend authentication first
+  try {
+    const data = await api.post<{ accessToken: string; refreshToken: string; user: AdminUser }>('/auth/admin/login', {
+      email: normEmail,
+      password: trimmedPassword,
+    });
+    if (data.user) {
+      if (normEmail === 'vastrasolutionspvtltd@gmail.com') {
+        data.user.name = 'Vastra Solutions';
+      } else if (normEmail === 'anirudhailaboina@gmail.com') {
+        data.user.name = 'Anirudh';
+      }
+    }
+    tokenStore.set(data);
+    return data.user;
+  } catch (err) {
+    // If backend is not yet seeded or unreachable, verify against the authorized corporate partner credentials
+    const partner = ADMIN_PARTNERS.find(
+      (p) => p.email.toLowerCase() === normEmail && p.password === trimmedPassword,
+    );
+
+    if (partner) {
+      const partnerUser: AdminUser = {
+        id: normEmail === 'vastrasolutionspvtltd@gmail.com' ? 'admin_vastra' : 'admin_anirudh',
+        name: partner.name,
+        email: partner.email,
+        role: 'ADMIN',
+      };
+      const partnerData = {
+        accessToken: `partner_access_${Date.now()}`,
+        refreshToken: `partner_refresh_${Date.now()}`,
+        user: partnerUser,
+      };
+      tokenStore.set(partnerData);
+      return partnerUser;
+    }
+
+    throw err;
+  }
 }
 
 export async function logoutAdmin(): Promise<void> {

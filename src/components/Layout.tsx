@@ -72,6 +72,20 @@ export default function Layout() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const userEmail = (currentUser?.email || '').toLowerCase().trim();
+  const isVastra = userEmail.includes('vastrasolutions') || (currentUser?.name || '').toLowerCase().includes('vastra');
+  const isAnirudh = userEmail.includes('anirudh') || (currentUser?.name || '').toLowerCase().includes('anirudh');
+
+  const displayName = isVastra
+    ? 'Vastra Solutions'
+    : isAnirudh
+    ? 'Anirudh'
+    : currentUser?.name && currentUser.name !== 'Yes Dhobi Admin'
+    ? currentUser.name
+    : 'Admin Partner';
+
+  const displayRole = isVastra || isAnirudh ? 'Partner' : currentUser?.role || 'Administrator';
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
@@ -423,14 +437,20 @@ export default function Layout() {
                 onClick={() => setIsProfileOpen((prev) => !prev)}
                 className="flex items-center space-x-2 sm:space-x-2.5 p-1 rounded-xl hover:bg-slate-100 transition-colors text-left cursor-pointer"
               >
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces"
-                  alt="Admin User"
-                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover ring-2 ring-blue-100 shrink-0"
-                />
+                <div
+                  className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center font-bold text-[11px] sm:text-xs shadow-sm ring-2 shrink-0 ${
+                    isVastra
+                      ? 'bg-gradient-to-tr from-blue-700 to-indigo-600 text-white ring-blue-100'
+                      : isAnirudh
+                      ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 text-white ring-sky-100'
+                      : 'bg-gradient-to-tr from-slate-700 to-slate-900 text-white ring-slate-100'
+                  }`}
+                >
+                  {isVastra ? 'VS' : isAnirudh ? 'A' : displayName.substring(0, 2).toUpperCase()}
+                </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-xs font-bold text-slate-900 leading-tight">Zoshua Colah</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">Platform Owner</p>
+                  <p className="text-xs font-bold text-slate-900 leading-tight">{displayName}</p>
+                  <p className="text-[10px] text-slate-400 font-semibold">{displayRole}</p>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden xs:block" />
               </button>
@@ -439,8 +459,8 @@ export default function Layout() {
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs font-medium">
                   <div className="px-3 py-2 border-b border-slate-100">
-                    <p className="font-bold text-slate-900">Signed in as</p>
-                    <p className="text-[11px] text-slate-500 truncate">{currentUser?.email ?? 'admin'}</p>
+                    <p className="font-bold text-slate-900">{displayName}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{currentUser?.email || displayRole}</p>
                   </div>
                   <NavLink
                     to="/settings"

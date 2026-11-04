@@ -10,7 +10,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useData();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('admin@yesdhobi.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotSent, setForgotSent] = useState(false);
@@ -71,7 +71,7 @@ export default function Login() {
               <label className="text-xs font-bold text-slate-900">Work Email Address</label>
               <Input
                 type="email"
-                placeholder="admin@yesdhobi.com"
+                placeholder="Enter your work email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 text-xs sm:text-sm bg-slate-50/70 border-slate-200 rounded-xl"
