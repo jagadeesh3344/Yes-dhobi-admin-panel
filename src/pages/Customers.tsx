@@ -193,7 +193,7 @@ export default function Customers() {
         {/* Table Footer with Pagination */}
         <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
           <p>
-            Showing 1-{Math.min(itemsPerPage, paginatedCustomers.length)} of 4,820 customers
+            Showing {filteredCustomers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} customers
           </p>
           <div className="flex items-center gap-1.5">
             <Button

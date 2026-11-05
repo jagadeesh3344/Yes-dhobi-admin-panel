@@ -246,7 +246,7 @@ export default function Vendors() {
 
         {/* Table Footer with Pagination */}
         <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
-          <p>Showing 1-{paginatedVendors.length} of 32 verified vendor hubs</p>
+          <p>Showing {filteredVendors.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredVendors.length)} of {filteredVendors.length} verified vendor hubs</p>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"

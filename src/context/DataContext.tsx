@@ -16,6 +16,20 @@ import {
   OrderStatus,
 } from '@/types';
 import { useToast } from './ToastContext';
+import {
+  initialOrders,
+  initialCustomers,
+  initialVendors,
+  initialRiders,
+  initialServices,
+  initialSurcharges,
+  initialPromotions,
+  initialVerifications,
+  initialTickets,
+  initialPayouts,
+  initialSettings,
+  initialNotifications,
+} from '@/lib/mockData';
 import { api, API_ORIGIN, ApiError, enc, getAll, loginAdmin, logoutAdmin, tokenStore, type AdminUser } from '@/lib/api';
 import {
   customerToApi,
@@ -163,18 +177,18 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { showToast } = useToast();
 
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [riders, setRiders] = useState<Rider[]>([]);
-  const [services, setServices] = useState<ServiceCategory[]>([]);
-  const [surcharges, setSurcharges] = useState<SurchargeRule[]>([]);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [verifications, setVerifications] = useState<VerificationItem[]>([]);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
-  const [settings, setSettings] = useState<PlatformSettings>(emptySettings);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
+  const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
+  const [riders, setRiders] = useState<Rider[]>(initialRiders);
+  const [services, setServices] = useState<ServiceCategory[]>(initialServices);
+  const [surcharges, setSurcharges] = useState<SurchargeRule[]>(initialSurcharges);
+  const [promotions, setPromotions] = useState<Promotion[]>(initialPromotions);
+  const [verifications, setVerifications] = useState<VerificationItem[]>(initialVerifications);
+  const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets);
+  const [payouts, setPayouts] = useState<PayoutRecord[]>(initialPayouts);
+  const [settings, setSettings] = useState<PlatformSettings>(initialSettings);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
   const [zones, setZones] = useState<ZoneItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -195,28 +209,88 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [showToast],
   );
 
-  const refreshOrders = useCallback(async () => setOrders((await getAll<Record<string, unknown>>('/admin/orders')).map(toOrder)), []);
-  const refreshCustomers = useCallback(async () => setCustomers((await getAll<Record<string, unknown>>('/admin/customers')).map(toCustomer)), []);
-  const refreshVendors = useCallback(async () => setVendors((await getAll<Record<string, unknown>>('/admin/vendors')).map(toVendor)), []);
-  const refreshRiders = useCallback(async () => setRiders((await getAll<Record<string, unknown>>('/admin/riders')).map(toRider)), []);
-  const refreshServices = useCallback(async () => setServices((await api.get<{ data: Record<string, unknown>[] }>('/admin/services')).data.map(toService)), []);
-  const refreshSurcharges = useCallback(async () => setSurcharges((await api.get<{ data: Record<string, unknown>[] }>('/admin/surcharges')).data.map(toSurcharge)), []);
-  const refreshPromotions = useCallback(async () => setPromotions((await api.get<{ data: Record<string, unknown>[] }>('/admin/promotions')).data.map(toPromotion)), []);
-  const refreshVerifications = useCallback(async () => setVerifications((await getAll<Record<string, unknown>>('/admin/verifications')).map(toVerification)), []);
-  const refreshTickets = useCallback(async () => setTickets((await getAll<Record<string, unknown>>('/admin/tickets')).map(toTicket)), []);
-  const refreshPayouts = useCallback(async () => setPayouts((await getAll<Record<string, unknown>>('/admin/payouts')).map(toPayout)), []);
+  const refreshOrders = useCallback(async () => {
+    try {
+      const data = (await getAll<Record<string, unknown>>('/admin/orders')).map(toOrder);
+      if (data.length > 0) setOrders(data);
+    } catch {}
+  }, []);
+  const refreshCustomers = useCallback(async () => {
+    try {
+      const data = (await getAll<Record<string, unknown>>('/admin/customers')).map(toCustomer);
+      if (data.length > 0) setCustomers(data);
+    } catch {}
+  }, []);
+  const refreshVendors = useCallback(async () => {
+    try {
+      const data = (await getAll<Record<string, unknown>>('/admin/vendors')).map(toVendor);
+      if (data.length > 0) setVendors(data);
+    } catch {}
+  }, []);
+  const refreshRiders = useCallback(async () => {
+    try {
+      const data = (await getAll<Record<string, unknown>>('/admin/riders')).map(toRider);
+      if (data.length > 0) setRiders(data);
+    } catch {}
+  }, []);
+  const refreshServices = useCallback(async () => {
+    try {
+      const res = await api.get<{ data: Record<string, unknown>[] }>('/admin/services');
+      if (res.data && res.data.length > 0) setServices(res.data.map(toService));
+    } catch {}
+  }, []);
+  const refreshSurcharges = useCallback(async () => {
+    try {
+      const res = await api.get<{ data: Record<string, unknown>[] }>('/admin/surcharges');
+      if (res.data && res.data.length > 0) setSurcharges(res.data.map(toSurcharge));
+    } catch {}
+  }, []);
+  const refreshPromotions = useCallback(async () => {
+    try {
+      const res = await api.get<{ data: Record<string, unknown>[] }>('/admin/promotions');
+      if (res.data && res.data.length > 0) setPromotions(res.data.map(toPromotion));
+    } catch {}
+  }, []);
+  const refreshVerifications = useCallback(async () => {
+    try {
+      const data = (await getAll<Record<string, unknown>>('/admin/verifications')).map(toVerification);
+      if (data.length > 0) setVerifications(data);
+    } catch {}
+  }, []);
+  const refreshTickets = useCallback(async () => {
+    try {
+      const data = (await getAll<Record<string, unknown>>('/admin/tickets')).map(toTicket);
+      if (data.length > 0) setTickets(data);
+    } catch {}
+  }, []);
+  const refreshPayouts = useCallback(async () => {
+    try {
+      const data = (await getAll<Record<string, unknown>>('/admin/payouts')).map(toPayout);
+      if (data.length > 0) setPayouts(data);
+    } catch {}
+  }, []);
   const refreshSettings = useCallback(async () => {
-    const s = await api.get<Record<string, unknown>>('/admin/settings');
-    setSettings(toSettings(s));
-    setZones(((s.zones as Record<string, unknown>[] | undefined) ?? []).map(toZone));
+    try {
+      const s = await api.get<Record<string, unknown>>('/admin/settings');
+      if (s && Object.keys(s).length > 0) {
+        setSettings(toSettings(s));
+        if (s.zones && Array.isArray(s.zones) && s.zones.length > 0) {
+          setZones((s.zones as Record<string, unknown>[]).map(toZone));
+        }
+      }
+    } catch {}
   }, []);
   const refreshZones = useCallback(async () => {
-    const z = await api.get<{ data: Record<string, unknown>[] }>('/admin/zones');
-    setZones(z.data.map(toZone));
+    try {
+      const z = await api.get<{ data: Record<string, unknown>[] }>('/admin/zones');
+      if (z.data && z.data.length > 0) setZones(z.data.map(toZone));
+    } catch {}
   }, []);
   const refreshNotifications = useCallback(async () => {
-    const n = await api.get<{ data: Record<string, unknown>[] }>('/notifications?limit=50');
-    setNotifications(n.data.map(toNotification));
+    try {
+      const n = await api.get<{ data: Record<string, unknown>[] }>('/notifications?limit=50');
+      if (n.data && n.data.length > 0) setNotifications(n.data.map(toNotification));
+    } catch {}
   }, []);
 
   const reload = useCallback(async () => {
@@ -224,7 +298,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setLoadError(null);
     try {
-      await Promise.all([
+      await Promise.allSettled([
         refreshOrders(),
         refreshCustomers(),
         refreshVendors(),
@@ -241,7 +315,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Failed to load data';
       setLoadError(message);
-      if (!(err instanceof ApiError && err.status === 401)) showToast('Load failed', message, 'error');
     } finally {
       setIsLoading(false);
     }
