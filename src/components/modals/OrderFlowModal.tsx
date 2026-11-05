@@ -75,6 +75,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
   const isOutForDelivery = ['Out for Delivery', 'Delivered'].includes(status);
   const isDelivered = status === 'Delivered';
   const isCancelled = status === 'Cancelled';
+  const isLeg2Assigned = !!order.deliveryRiderName && order.deliveryRiderName !== 'Unassigned';
 
   // Get status color theme
   const getStatusBadge = (s: OrderStatus) => {
@@ -207,17 +208,17 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
           </div>
         </div>
 
-        {/* 2-Leg Journey Stepper */}
+        {/* 2-Leg Journey Stepper - Only Showing Assigned Riders & Stages */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-blue-600" />
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Full 2-Leg Logistics Journey Flow
+                Assigned Logistics Pipeline
               </h3>
             </div>
             <span className="text-[11px] text-slate-400 font-medium">
-              Real-time delivery progression
+              Only Showing Confirmed Booking Assignments
             </span>
           </div>
 
@@ -247,11 +248,11 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                   </span>
                 ) : isLeg1Assigned ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full">
-                    <Clock className="w-3 h-3" /> Rider Dispatched
+                    <Clock className="w-3 h-3" /> Rider Assigned
                   </span>
                 ) : (
                   <span className="text-[11px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
-                    Awaiting Rider
+                    Awaiting Assignment
                   </span>
                 )}
               </div>
@@ -259,7 +260,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
               {/* Pickup Rider Info */}
               <div className="space-y-2 text-xs">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Pickup Rider</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Assigned Pickup Rider</p>
                   <div className="flex items-center justify-between mt-0.5">
                     <span className="font-bold text-slate-900 text-sm">
                       {order.pickupRiderName || order.riderName || 'Unassigned'}
@@ -325,7 +326,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
               {/* Vendor Info */}
               <div className="space-y-2 text-xs">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Assigned Hub</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Assigned Laundry Hub</p>
                   <div className="flex items-center justify-between mt-0.5">
                     <span className="font-bold text-slate-900 text-sm">
                       {order.partnerName || 'Not Assigned'}
@@ -358,7 +359,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                   <div className="flex justify-between">
                     <span className="text-slate-500">Ready for Handover:</span>
                     <span className="font-semibold text-slate-800">
-                      {isReady ? 'Ready for Rider 2 ✓' : 'Processing'}
+                      {isReady ? 'Ready for Delivery Rider ✓' : 'Processing'}
                     </span>
                   </div>
                 </div>
@@ -371,7 +372,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                 ? 'bg-emerald-50/50 border-emerald-200 shadow-xs'
                 : isOutForDelivery
                 ? 'bg-amber-50/50 border-amber-200 shadow-xs'
-                : order.deliveryRiderName && order.deliveryRiderName !== 'Unassigned'
+                : isLeg2Assigned
                 ? 'bg-blue-50/40 border-blue-200'
                 : 'bg-slate-50/60 border-slate-200'
             }`}>
@@ -387,13 +388,17 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
                     <Truck className="w-3 h-3" /> Out for Delivery
                   </span>
+                ) : isLeg2Assigned ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full">
+                    <Clock className="w-3 h-3" /> Rider Assigned
+                  </span>
                 ) : isReady ? (
                   <span className="text-[11px] font-bold text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-full">
-                    Ready for Dispatch
+                    Awaiting Rider Assignment
                   </span>
                 ) : (
                   <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                    Queued after Laundry
+                    Assigned after Vendor processing
                   </span>
                 )}
               </div>
@@ -401,10 +406,10 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
               {/* Delivery Rider Info */}
               <div className="space-y-2 text-xs">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Delivery Rider (Leg 2)</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Assigned Delivery Rider</p>
                   <div className="flex items-center justify-between mt-0.5">
                     <span className="font-bold text-slate-900 text-sm">
-                      {order.deliveryRiderName || (isReady ? 'Unassigned (Dispatch Ready)' : 'Queued')}
+                      {order.deliveryRiderName || (isReady ? 'Unassigned (Assign Below)' : 'Awaiting Vendor Completion')}
                     </span>
                     {order.deliveryRiderDisplayId && (
                       <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
@@ -443,7 +448,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
           </div>
         </div>
 
-        {/* Quick Operations Controls - Perfected Spacing & Full-Width Buttons */}
+        {/* Dispatch Controls - Directly Assigning Confirmed Riders */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -452,7 +457,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
             <span className="text-[11px] text-slate-400 font-medium">Assign or advance order legs</span>
           </div>
 
-          {/* Clean 3-Card Dispatch Controls - Zero Overlap */}
+          {/* Clean 3-Card Dispatch Controls */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {/* Reassign Leg 1 Pickup Rider */}
             <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between gap-2.5">
@@ -594,34 +599,6 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
             )}
           </div>
         </div>
-
-        {/* Real-time Order Timeline / Audit Trail */}
-        {order.events && order.events.length > 0 && (
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Real-Time Event Audit Log
-              </h4>
-              <span className="text-[11px] text-slate-400">{order.events.length} logged events</span>
-            </div>
-            <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
-              {order.events.map((e, idx) => (
-                <div key={e.id || idx} className="flex items-start gap-3 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800">{e.title}</span>
-                      <span className="text-[10px] text-slate-400">{e.createdAt}</span>
-                    </div>
-                    {e.description && (
-                      <p className="text-[11px] text-slate-500 mt-0.5">{e.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </Modal>
   );

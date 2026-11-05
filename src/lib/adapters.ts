@@ -165,14 +165,24 @@ export function toOrder(o: Rec): Order {
       : undefined,
 
     events: Array.isArray(o.events)
-      ? o.events.map((e: Rec) => ({
-          id: e.id,
-          type: e.type,
-          status: e.status,
-          title: e.title ?? '',
-          description: e.description,
-          createdAt: fmtDateTime(e.createdAt),
-        }))
+      ? o.events
+          .filter((e: Rec) => {
+            const title = (e.title || '').toLowerCase();
+            const desc = (e.description || '').toLowerCase();
+            const type = (e.type || '').toUpperCase();
+            if (type.includes('DISPATCH') || type.includes('OFFER') || type.includes('CANDIDATE')) return false;
+            if (title.includes('search started') || title.includes('offered to')) return false;
+            if (desc.includes('offered one at a time') || desc.includes('in range') || /rider \d+ of \d+/.test(desc)) return false;
+            return true;
+          })
+          .map((e: Rec) => ({
+            id: e.id,
+            type: e.type,
+            status: e.status,
+            title: e.title ?? '',
+            description: e.description,
+            createdAt: fmtDateTime(e.createdAt),
+          }))
       : undefined,
   };
 }
