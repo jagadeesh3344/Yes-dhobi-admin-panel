@@ -216,25 +216,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshOrders = useCallback(async () => {
     try {
       const data = (await getAll<Record<string, unknown>>('/admin/orders')).map(toOrder);
-      if (data.length > 0) setOrders(data);
+      setOrders(data);
     } catch {}
   }, []);
   const refreshCustomers = useCallback(async () => {
     try {
       const data = (await getAll<Record<string, unknown>>('/admin/customers')).map(toCustomer);
-      if (data.length > 0) setCustomers(data);
+      setCustomers(data);
     } catch {}
   }, []);
   const refreshVendors = useCallback(async () => {
     try {
       const data = (await getAll<Record<string, unknown>>('/admin/vendors')).map(toVendor);
-      if (data.length > 0) setVendors(data);
+      setVendors(data);
     } catch {}
   }, []);
   const refreshRiders = useCallback(async () => {
     try {
       const data = (await getAll<Record<string, unknown>>('/admin/riders')).map(toRider);
-      if (data.length > 0) setRiders(data);
+      setRiders(data);
     } catch {}
   }, []);
   const refreshServices = useCallback(async () => {
@@ -402,6 +402,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isAuthenticated, isLiveSimulationActive, refreshNotifications, refreshRiders, refreshTickets]);
 
+  // 5-second real-time sync heartbeat: guarantees orders & notifications stay fresh even if websocket drops
+  useEffect(() => {
+    if (!isAuthenticated || !isLiveSimulationActive) return;
+    const interval = setInterval(() => {
+      void refreshOrders();
+      void refreshNotifications();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isLiveSimulationActive, refreshOrders, refreshNotifications]);
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -442,19 +452,62 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const updateOrderStatus = useCallback<DataContextType['updateOrderStatus']>(
-    (id, status) => run(() => api.post(`/admin/orders/${orderKey(id)}/status`, { status, force: true }), [refreshOrders, refreshRiders], ['Status Updated', `Order ${id} moved to "${status}".`]),
+    (id, status) => {
+      // Optimistic update for instant UI feedback
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === id || (o.orderNumber && (o.orderNumber === id || `#${o.orderNumber}` === id))
+            ? { ...o, status }
+            : o
+        )
+      );
+      run(
+        () => api.post(`/admin/orders/${orderKey(id)}/status`, { status, force: true }),
+        [refreshOrders, refreshRiders],
+        ['Status Updated', `Order ${id} moved to "${status}".`]
+      );
+    },
     [run, refreshOrders, refreshRiders],
   );
 
   const assignRiderToOrder = useCallback<DataContextType['assignRiderToOrder']>(
-    (orderId, riderName, leg) => {
+    (orderId, riderIdOrName, leg) => {
       const rider = riders.find(
-        (r) => r.name === riderName || r.id === riderName || r.displayId === riderName
+        (r) => r.id === riderIdOrName || r.name === riderIdOrName || r.displayId === riderIdOrName
       );
       if (!rider) {
-        showToast('Rider not found', `No rider found matching "${riderName}".`, 'error');
+        showToast('Rider not found', `No rider found matching "${riderIdOrName}".`, 'error');
         return;
       }
+      const resolvedLeg = leg ?? 'PICKUP';
+      // Optimistic update
+      setOrders((prev) =>
+        prev.map((o) => {
+          if (o.id === orderId || (o.orderNumber && (o.orderNumber === orderId || `#${o.orderNumber}` === orderId))) {
+            if (resolvedLeg === 'PICKUP') {
+              return {
+                ...o,
+                pickupRiderId: rider.id,
+                pickupRiderDisplayId: rider.displayId,
+                pickupRiderName: rider.name,
+                pickupRiderPhone: rider.phone,
+                riderName: rider.name,
+                status: o.status === 'Pending Pickup' ? 'Assigned' : o.status,
+              };
+            } else {
+              return {
+                ...o,
+                deliveryRiderId: rider.id,
+                deliveryRiderDisplayId: rider.displayId,
+                deliveryRiderName: rider.name,
+                deliveryRiderPhone: rider.phone,
+                riderName: rider.name,
+              };
+            }
+          }
+          return o;
+        })
+      );
       run(
         () => api.post(`/admin/orders/${orderKey(orderId)}/assign-rider`, { riderId: rider.id, leg }),
         [refreshOrders, refreshRiders],
@@ -465,14 +518,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const assignPartnerToOrder = useCallback<DataContextType['assignPartnerToOrder']>(
-    (orderId, partnerName) => {
+    (orderId, vendorIdOrName) => {
       const vendor = vendors.find(
-        (v) => v.name === partnerName || v.id === partnerName || v.displayId === partnerName
+        (v) => v.id === vendorIdOrName || v.name === vendorIdOrName || v.displayId === vendorIdOrName
       );
       if (!vendor) {
-        showToast('Vendor not found', `No laundry partner found matching "${partnerName}".`, 'error');
+        showToast('Vendor not found', `No laundry partner found matching "${vendorIdOrName}".`, 'error');
         return;
       }
+      // Optimistic update
+      setOrders((prev) =>
+        prev.map((o) => {
+          if (o.id === orderId || (o.orderNumber && (o.orderNumber === orderId || `#${o.orderNumber}` === orderId))) {
+            return {
+              ...o,
+              vendorId: vendor.id,
+              vendorDisplayId: vendor.displayId,
+              partnerName: vendor.name,
+            };
+          }
+          return o;
+        })
+      );
       run(
         () => api.post(`/admin/orders/${orderKey(orderId)}/assign-vendor`, { vendorId: vendor.id }),
         [refreshOrders, refreshVendors],
@@ -484,11 +551,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteOrder = useCallback<DataContextType['deleteOrder']>(
     (id) => {
-      setOrders((prev) => prev.filter((o) => o.id !== id));
+      setOrders((prev) => prev.filter((o) => o.id !== id && o.orderNumber !== id && `#${o.orderNumber}` !== id));
       run(
-        () => api.delete(`/admin/orders/${orderKey(id)}`),
+        () => api.delete(`/admin/orders/${orderKey(id)}?hard=true`),
         [refreshOrders],
-        ['Order Cancelled', `Order ${id} was cancelled.`, 'info']
+        ['Order Deleted', `Order ${id} was deleted successfully.`, 'info']
       );
     },
     [run, refreshOrders],
@@ -498,19 +565,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (ids: string[]) => {
       if (ids.length === 0) return;
       const idSet = new Set(ids);
-      setOrders((prev) => prev.filter((o) => !idSet.has(o.id)));
+      setOrders((prev) => prev.filter((o) => !idSet.has(o.id) && !idSet.has(o.orderNumber ?? '') && !idSet.has(`#${o.orderNumber}`)));
       run(
         async () => {
           await Promise.allSettled(
             ids.map((id) =>
-              api.delete(`/admin/orders/${orderKey(id)}`).catch((err) => {
+              api.delete(`/admin/orders/${orderKey(id)}?hard=true`).catch((err) => {
                 if (err?.status !== 404) console.warn('Delete order error:', err);
               })
             )
           );
         },
         [refreshOrders],
-        ['Orders Cancelled', `${ids.length} order(s) cancelled/removed successfully.`, 'info']
+        ['Orders Deleted', `${ids.length} order(s) deleted successfully.`, 'info']
       );
     },
     [run, refreshOrders],

@@ -42,6 +42,18 @@ export default function Orders() {
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
 
+  // Active tracking order synchronized with real-time orders state
+  const activeTrackingOrder = useMemo(() => {
+    if (!trackingOrder) return null;
+    return (
+      orders.find(
+        (o) =>
+          o.id === trackingOrder.id ||
+          (trackingOrder.orderNumber && o.orderNumber === trackingOrder.orderNumber)
+      ) ?? trackingOrder
+    );
+  }, [orders, trackingOrder]);
+
   // Checkbox Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -736,11 +748,11 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* 2-Leg Flow Tracking Modal */}
+      {/* 2-Leg Flow Tracking Modal - Real-Time Synced */}
       <OrderFlowModal
-        isOpen={!!trackingOrder}
+        isOpen={!!activeTrackingOrder}
         onClose={() => setTrackingOrder(null)}
-        order={trackingOrder}
+        order={activeTrackingOrder}
         onOpenManage={(ord) => {
           setOrderToEdit(ord);
           setIsModalOpen(true);

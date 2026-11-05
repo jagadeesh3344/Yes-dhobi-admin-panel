@@ -476,7 +476,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                 >
                   <option value="">Select Pickup Rider...</option>
                   {riders.map((r) => (
-                    <option key={r.id} value={r.name}>
+                    <option key={r.id} value={r.id}>
                       {r.name} ({r.displayId || 'RDR'}) - {r.status}
                     </option>
                   ))}
@@ -509,7 +509,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                 >
                   <option value="">Select Vendor Hub...</option>
                   {vendors.map((v) => (
-                    <option key={v.id} value={v.name}>
+                    <option key={v.id} value={v.id}>
                       {v.name} ({v.displayId || 'VDR'}) - {v.zone}
                     </option>
                   ))}
@@ -542,7 +542,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                 >
                   <option value="">Select Delivery Rider...</option>
                   {riders.map((r) => (
-                    <option key={r.id} value={r.name}>
+                    <option key={r.id} value={r.id}>
                       {r.name} ({r.displayId || 'RDR'}) - {r.status}
                     </option>
                   ))}
