@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Rider } from '@/types';
+import { formatRiderDisplayId } from '@/lib/idUtils';
 import { useData } from '@/context/DataContext';
 import { MapPin, Navigation, Bike, Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
@@ -90,7 +91,7 @@ export const RiderModal: React.FC<RiderModalProps> = ({
         isOpen={isOpen}
         onClose={onClose}
         title={`Live Fleet Tracking: ${riderToEdit.name}`}
-        subtitle={`ID: ${riderToEdit.id} • ${riderToEdit.vehicle} (${riderToEdit.vehiclePlate || 'Standard'})`}
+        subtitle={`ID: ${riderToEdit.displayId || formatRiderDisplayId(riderToEdit.id)} • ${riderToEdit.vehicle} (${riderToEdit.vehiclePlate || 'Standard'})`}
         maxWidth="xl"
         footer={
           <Button variant="outline" onClick={onClose}>
@@ -189,7 +190,7 @@ export const RiderModal: React.FC<RiderModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={riderToEdit ? `Edit Rider: ${riderToEdit.name}` : 'Onboard New Delivery Rider'}
+      title={riderToEdit ? `Edit Rider: ${riderToEdit.name} (${riderToEdit.displayId || formatRiderDisplayId(riderToEdit.id)})` : 'Onboard New Delivery Rider'}
       subtitle={riderToEdit ? 'Modify fleet details and active working zone' : 'Add a new delivery driver to the Yes Dhobi logistics network'}
       maxWidth="lg"
       footer={

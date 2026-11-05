@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Download, Star, ChevronLeft, ChevronRight, Eye, Trash2 } from 'lucide-react';
+import { Search, Plus, Download, Star, ChevronLeft, ChevronRight, Eye, Trash2, Copy, Check } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { RiderModal } from '@/components/modals/RiderModal';
 import { VerificationModal } from '@/components/modals/VerificationModal';
 import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { exportToCsv } from '@/lib/exportCsv';
+import { formatRiderDisplayId } from '@/lib/idUtils';
 import { Rider, VerificationItem } from '@/types';
 
 export default function Riders() {
@@ -24,17 +25,33 @@ export default function Riders() {
   const [selectedVerification, setSelectedVerification] = useState<VerificationItem | null>(null);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const itemsPerPage = 8;
 
   const combinedRiders = riders;
 
+  const getDisplayId = (r: Rider) => r.displayId || formatRiderDisplayId(r.id);
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
+
   const filteredRiders = useMemo(() => {
     return combinedRiders.filter((rider) => {
+      const dispId = getDisplayId(rider);
+      const q = searchQuery.toLowerCase().trim();
+      const numOnly = dispId.replace(/\D/g, '');
+
       const matchesSearch =
-        rider.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rider.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rider.vehicleNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rider.id.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        rider.name.toLowerCase().includes(q) ||
+        rider.phone.toLowerCase().includes(q) ||
+        (rider.vehicleNumber && rider.vehicleNumber.toLowerCase().includes(q)) ||
+        rider.id.toLowerCase().includes(q) ||
+        dispId.toLowerCase().includes(q) ||
+        numOnly.includes(q);
 
       const matchesVehicle =
         selectedVehicle === 'All' ||
@@ -88,7 +105,8 @@ export default function Riders() {
     exportToCsv(
       'yesdhobi_rider_fleet',
       filteredRiders.map((r) => ({
-        RiderID: r.id,
+        RiderID: getDisplayId(r),
+        SystemID: r.id,
         Name: r.name,
         Phone: r.phone,
         Vehicle: r.vehicle,
@@ -165,7 +183,7 @@ export default function Riders() {
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search by rider name, phone, plate #..."
+              placeholder="Search by ID (e.g. RDR-86501), name, phone, plate #..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -304,6 +322,7 @@ export default function Riders() {
               {paginatedRiders.map((rider) => {
                 const statusMeta = getStatusDisplay(rider.status);
                 const isSelected = selectedRiderIds.includes(rider.id);
+                const displayId = getDisplayId(rider);
                 return (
                   <tr
                     key={rider.id}
@@ -320,14 +339,35 @@ export default function Riders() {
                         aria-label={`Select rider ${rider.name}`}
                       />
                     </td>
-                    <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{rider.id}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 group">
+                        <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-200/70">
+                          {displayId}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(rider.id, displayId);
+                          }}
+                          title={`Copy ID: ${displayId} (System ID: ${rider.id})`}
+                          className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                          aria-label="Copy rider ID"
+                        >
+                          {copiedId === rider.id ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <p className="font-semibold text-slate-900">{rider.name}</p>
-                      <p className="text-[11px] text-slate-500">{rider.phone}</p>
+                      <p className="text-[11px] text-slate-500 font-medium">{rider.phone}</p>
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <p className="text-slate-800 font-medium">
-                        {rider.vehicle} <span className="text-slate-400">({rider.vehicleNumber})</span>
+                        {rider.vehicle} <span className="text-slate-400">({rider.vehiclePlate || 'N/A'})</span>
                       </p>
                     </td>
                     <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{rider.zone}</td>
@@ -469,7 +509,7 @@ export default function Riders() {
           }
         }}
         title={`Delete Rider ${riderToDelete?.name || ''}?`}
-        description={`Are you sure you want to delete ${riderToDelete?.name || 'this rider'} (${riderToDelete?.phone || riderToDelete?.id}, Vehicle: ${riderToDelete?.vehicle || 'Fleet'})? This will deactivate their account and remove them from fleet dispatch.`}
+        description={`Are you sure you want to delete ${riderToDelete?.name || 'this rider'} (${riderToDelete ? getDisplayId(riderToDelete) : ''}, Vehicle: ${riderToDelete?.vehicle || 'Fleet'})? This will deactivate their account and remove them from fleet dispatch.`}
         confirmText="Yes, Delete Rider"
       />
 

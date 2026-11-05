@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Download, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight, Trash2, Copy, Check } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { CustomerModal } from '@/components/modals/CustomerModal';
 import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { exportToCsv } from '@/lib/exportCsv';
+import { formatCustomerDisplayId } from '@/lib/idUtils';
 import { Customer } from '@/types';
 
 export default function Customers() {
@@ -19,17 +20,33 @@ export default function Customers() {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   const combinedCustomers = customers;
 
+  const getDisplayId = (c: Customer) => c.displayId || formatCustomerDisplayId(c.id);
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
+
   const filteredCustomers = useMemo(() => {
     return combinedCustomers.filter((customer) => {
+      const dispId = getDisplayId(customer);
+      const q = searchQuery.toLowerCase().trim();
+      const numOnly = dispId.replace(/\D/g, '');
+
       const matchesSearch =
-        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.id.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        customer.name.toLowerCase().includes(q) ||
+        customer.phone.toLowerCase().includes(q) ||
+        customer.email.toLowerCase().includes(q) ||
+        customer.id.toLowerCase().includes(q) ||
+        dispId.toLowerCase().includes(q) ||
+        numOnly.includes(q);
 
       const matchesStatus =
         selectedStatus === 'All' ||
@@ -76,7 +93,8 @@ export default function Customers() {
     exportToCsv(
       'yesdhobi_customers',
       filteredCustomers.map((c) => ({
-        CustomerID: c.id,
+        CustomerID: getDisplayId(c),
+        SystemID: c.id,
         Name: c.name,
         Phone: c.phone,
         Email: c.email,
@@ -109,7 +127,7 @@ export default function Customers() {
           <div className="relative flex-1 min-w-[240px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search by name, email or phone..."
+              placeholder="Search by ID (e.g. CUST-40599), name, email, phone..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -193,7 +211,7 @@ export default function Customers() {
                     title="Select all on this page"
                   />
                 </th>
-                <th className="px-5 py-3.5 whitespace-nowrap">ID</th>
+                <th className="px-5 py-3.5 whitespace-nowrap">Customer ID</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Customer Name</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Phone</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Email</th>
@@ -207,6 +225,7 @@ export default function Customers() {
             <tbody className="divide-y divide-slate-100">
               {paginatedCustomers.map((customer) => {
                 const isSelected = selectedCustomerIds.includes(customer.id);
+                const displayId = getDisplayId(customer);
                 return (
                   <tr
                     key={customer.id}
@@ -223,16 +242,37 @@ export default function Customers() {
                         aria-label={`Select customer ${customer.name}`}
                       />
                     </td>
-                    <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{customer.id}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 group">
+                        <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-200/70">
+                          {displayId}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(customer.id, displayId);
+                          }}
+                          title={`Copy ID: ${displayId} (System ID: ${customer.id})`}
+                          className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                          aria-label="Copy customer ID"
+                        >
+                          {copiedId === customer.id ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div className="font-semibold text-slate-900">{customer.name}</div>
                       <div className="text-[11px] text-slate-500 font-medium truncate max-w-[220px]">
                         {[customer.address, customer.city, customer.pincode].filter(Boolean).join(', ') || 'No address saved'}
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">{customer.phone}</td>
+                    <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap font-medium">{customer.phone}</td>
                     <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{customer.email}</td>
-                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{customer.totalOrders} orders</td>
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap font-medium">{customer.totalOrders} orders</td>
                     <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">₹{customer.walletBalance.toLocaleString()}</td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <span
@@ -344,7 +384,7 @@ export default function Customers() {
           }
         }}
         title={`Delete Customer ${customerToDelete?.name || ''}?`}
-        description={`Are you sure you want to delete ${customerToDelete?.name || 'this customer'} (${customerToDelete?.phone || customerToDelete?.id})? This will deactivate their account and remove them from active records.`}
+        description={`Are you sure you want to delete ${customerToDelete?.name || 'this customer'} (${customerToDelete ? getDisplayId(customerToDelete) : ''}, Phone: ${customerToDelete?.phone || 'N/A'})? This will deactivate their account and remove them from active records.`}
         confirmText="Yes, Delete Customer"
       />
 

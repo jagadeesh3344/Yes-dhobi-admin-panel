@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Download, Star, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, Plus, Download, Star, ChevronLeft, ChevronRight, Trash2, Copy, Check } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { VendorModal } from '@/components/modals/VendorModal';
 import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { exportToCsv } from '@/lib/exportCsv';
+import { formatVendorDisplayId } from '@/lib/idUtils';
 import { Vendor } from '@/types';
 
 export default function Vendors() {
@@ -20,17 +21,35 @@ export default function Vendors() {
   const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const itemsPerPage = 7;
 
   const combinedVendors = vendors;
 
+  const getDisplayId = (v: Vendor) => v.displayId || formatVendorDisplayId(v.id, v.registrationId);
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
+
   const filteredVendors = useMemo(() => {
     return combinedVendors.filter((vendor) => {
+      const dispId = getDisplayId(vendor);
+      const q = searchQuery.toLowerCase().trim();
+      const numOnly = dispId.replace(/\D/g, '');
+
       const matchesSearch =
-        vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.id.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        vendor.name.toLowerCase().includes(q) ||
+        vendor.owner.toLowerCase().includes(q) ||
+        vendor.location.toLowerCase().includes(q) ||
+        vendor.phone.toLowerCase().includes(q) ||
+        vendor.id.toLowerCase().includes(q) ||
+        (vendor.registrationId && vendor.registrationId.toLowerCase().includes(q)) ||
+        dispId.toLowerCase().includes(q) ||
+        numOnly.includes(q);
 
       const matchesZone =
         selectedZone === 'All' ||
@@ -82,7 +101,9 @@ export default function Vendors() {
     exportToCsv(
       'yesdhobi_laundry_partners',
       filteredVendors.map((v) => ({
-        VendorID: v.id,
+        VendorID: getDisplayId(v),
+        SystemID: v.id,
+        RegistrationID: v.registrationId || '',
         ShopName: v.name,
         Owner: v.owner,
         Phone: v.phone,
@@ -129,7 +150,7 @@ export default function Vendors() {
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search by vendor name, owner, area..."
+              placeholder="Search by ID (e.g. VDR-10101), name, owner, area..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -257,6 +278,7 @@ export default function Vendors() {
               {paginatedVendors.map((vendor) => {
                 const statusMeta = getStatusDisplay(vendor.status);
                 const isSelected = selectedVendorIds.includes(vendor.id);
+                const displayId = getDisplayId(vendor);
                 return (
                   <tr
                     key={vendor.id}
@@ -273,11 +295,32 @@ export default function Vendors() {
                         aria-label={`Select vendor ${vendor.name}`}
                       />
                     </td>
-                    <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{vendor.id}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 group">
+                        <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-200/70">
+                          {displayId}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(vendor.id, displayId);
+                          }}
+                          title={`Copy ID: ${displayId} (System ID: ${vendor.id})`}
+                          className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                          aria-label="Copy vendor ID"
+                        >
+                          {copiedId === vendor.id ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-5 py-3.5 font-semibold text-slate-900 whitespace-nowrap">{vendor.name}</td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <p className="text-slate-900 font-medium">{vendor.owner}</p>
-                      <p className="text-[11px] text-slate-500">{vendor.phone}</p>
+                      <p className="text-[11px] text-slate-500 font-medium">{vendor.phone}</p>
                     </td>
                     <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{vendor.location}</td>
                     <td className="px-5 py-3.5 text-slate-800 font-semibold whitespace-nowrap">{vendor.capacityPerDay} kg/day</td>
@@ -400,7 +443,7 @@ export default function Vendors() {
           }
         }}
         title={`Delete Vendor ${vendorToDelete?.name || ''}?`}
-        description={`Are you sure you want to delete ${vendorToDelete?.name || 'this vendor'} (Owner: ${vendorToDelete?.owner || 'Partner'}, ${vendorToDelete?.location || ''})? This will deactivate their hub and remove them from active dispatch.`}
+        description={`Are you sure you want to delete ${vendorToDelete?.name || 'this vendor'} (${vendorToDelete ? getDisplayId(vendorToDelete) : ''}, Owner: ${vendorToDelete?.owner || 'Partner'}, ${vendorToDelete?.location || ''})? This will deactivate their hub and remove them from active dispatch.`}
         confirmText="Yes, Delete Vendor"
       />
 

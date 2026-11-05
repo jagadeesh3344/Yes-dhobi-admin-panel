@@ -33,6 +33,7 @@ export interface Order {
 
 export interface Customer {
   id: string;
+  displayId?: string;
   name: string;
   phone: string;
   email: string;
@@ -48,6 +49,8 @@ export interface Customer {
 
 export interface Vendor {
   id: string;
+  displayId?: string;
+  registrationId?: string;
   name: string;
   owner: string;
   phone: string;
@@ -67,6 +70,7 @@ export interface Vendor {
 
 export interface Rider {
   id: string;
+  displayId?: string;
   name: string;
   phone: string;
   vehicle: 'Electric Bike' | 'Scooter' | 'Bicycle' | 'Van';

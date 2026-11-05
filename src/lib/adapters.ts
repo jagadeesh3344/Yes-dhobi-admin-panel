@@ -17,6 +17,7 @@ import type {
   Vendor,
   VerificationItem,
 } from '@/types';
+import { formatCustomerDisplayId, formatVendorDisplayId, formatRiderDisplayId } from './idUtils';
 
 type Rec = Record<string, any>;
 
@@ -88,6 +89,7 @@ export function toOrder(o: Rec): Order {
 export function toCustomer(c: Rec): Customer {
   return {
     id: c.id,
+    displayId: c.displayId ?? formatCustomerDisplayId(c.id),
     name: c.name,
     phone: c.phone ?? '',
     email: c.email ?? '',
@@ -105,6 +107,8 @@ export function toCustomer(c: Rec): Customer {
 export function toVendor(v: Rec): Vendor {
   return {
     id: v.id,
+    displayId: v.displayId ?? formatVendorDisplayId(v.id, v.registrationId),
+    registrationId: v.registrationId,
     name: v.name,
     owner: v.owner ?? '',
     phone: v.phone ?? '',
@@ -127,6 +131,7 @@ export function toRider(r: Rec): Rider {
   const docs = (r.documents ?? r.fullDocuments ?? {}) as Record<string, string>;
   return {
     id: r.id,
+    displayId: r.displayId ?? formatRiderDisplayId(r.id),
     name: r.name,
     phone: r.phone ?? '',
     vehicle: (r.vehicle === 'Motorcycle' ? 'Scooter' : r.vehicle) as Rider['vehicle'],

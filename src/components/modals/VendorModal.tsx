@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Vendor } from '@/types';
+import { formatVendorDisplayId } from '@/lib/idUtils';
 import { useData } from '@/context/DataContext';
 import { MapPin } from 'lucide-react';
 import { VendorMapModal } from './VendorMapModal';
@@ -95,7 +96,7 @@ export const VendorModal: React.FC<VendorModalProps> = ({ isOpen, onClose, vendo
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={vendorToEdit ? `Edit Partner: ${vendorToEdit.name}` : 'Onboard New Laundry Partner'}
+        title={vendorToEdit ? `Edit Partner: ${vendorToEdit.name} (${vendorToEdit.displayId || formatVendorDisplayId(vendorToEdit.id, vendorToEdit.registrationId)})` : 'Onboard New Laundry Partner'}
         subtitle={vendorToEdit ? 'Modify shop details, capacity and commission terms' : 'Register a new dhobi/laundry vendor shop in the network'}
         maxWidth="lg"
         footer={

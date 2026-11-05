@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Customer } from '@/types';
+import { formatCustomerDisplayId } from '@/lib/idUtils';
 import { useData } from '@/context/DataContext';
 
 interface CustomerModalProps {
@@ -80,7 +81,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, c
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={customerToEdit ? `Edit Customer: ${customerToEdit.name}` : 'Add New Customer Profile'}
+      title={customerToEdit ? `Edit Customer: ${customerToEdit.name} (${customerToEdit.displayId || formatCustomerDisplayId(customerToEdit.id)})` : 'Add New Customer Profile'}
       subtitle={customerToEdit ? 'Update contact info, address and wallet details' : 'Register a new customer for laundry pickup services'}
       maxWidth="lg"
       footer={
