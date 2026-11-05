@@ -65,24 +65,115 @@ const PAY_METHOD_LABEL: Record<string, Order['paymentMethod']> = { UPI: 'UPI', C
 const PAY_STATUS_LABEL: Record<string, Order['paymentStatus']> = { PAID: 'Paid', PENDING: 'Pending', REFUNDED: 'Refunded', FAILED: 'Pending' };
 
 export function toOrder(o: Rec): Order {
+  const customerId = o.customer?.id ?? o.customerId;
+  const vendorId = o.vendor?.id ?? o.vendorId;
+  const pickupRiderId = o.pickupRider?.id ?? o.pickupRiderId;
+  const deliveryRiderId = o.deliveryRider?.id ?? o.deliveryRiderId;
+
   return {
-    id: o.displayId ?? `#${o.orderNumber}`,
-    customerName: o.customerName ?? o.customer?.name ?? '',
+    id: o.displayId ?? (o.orderNumber ? `#${o.orderNumber}` : (o.id || '#pending')),
+    orderNumber: o.orderNumber ? String(o.orderNumber) : (o.id || ''),
+    customerId,
+    customerDisplayId: customerId ? formatCustomerDisplayId(customerId) : undefined,
+    customerName: o.customerName ?? o.customer?.name ?? 'Customer',
     customerPhone: o.customerPhone ?? o.customer?.phone ?? '',
     customerAddress: o.customerAddress ?? o.address?.line ?? '',
-    partnerName: o.partnerName ?? o.vendor?.name ?? '',
-    riderName: o.riderName || 'Unassigned',
-    serviceName: o.serviceSummary ?? '',
+
+    vendorId,
+    vendorDisplayId: vendorId ? formatVendorDisplayId(vendorId, o.vendor?.registrationId) : undefined,
+    partnerName: o.partnerName ?? o.vendor?.name ?? 'Not Assigned',
+    vendorDetails: o.vendor
+      ? {
+          id: o.vendor.id,
+          displayId: formatVendorDisplayId(o.vendor.id, o.vendor.registrationId),
+          registrationId: o.vendor.registrationId,
+          name: o.vendor.name ?? o.partnerName ?? '',
+          ownerName: o.vendor.ownerName,
+          phone: o.vendor.phone,
+          address: o.vendor.address,
+        }
+      : undefined,
+
+    // Leg 1: Pickup Rider (Customer -> Vendor)
+    pickupRiderId,
+    pickupRiderDisplayId: pickupRiderId ? formatRiderDisplayId(pickupRiderId) : undefined,
+    pickupRiderName: o.pickupRider?.name ?? o.pickupRiderName ?? (o.pickupRider ? 'Assigned' : 'Unassigned'),
+    pickupRiderPhone: o.pickupRider?.phone ?? o.pickupRiderPhone,
+    pickupRiderDetails: o.pickupRider
+      ? {
+          id: o.pickupRider.id,
+          displayId: formatRiderDisplayId(o.pickupRider.id),
+          name: o.pickupRider.name,
+          phone: o.pickupRider.phone,
+          vehicle: o.pickupRider.vehicleType,
+          vehiclePlate: o.pickupRider.vehicleNumber,
+        }
+      : undefined,
+    pickedUpAt: o.pickedUpAt ? fmtDateTime(o.pickedUpAt) : undefined,
+    pickupArrivedAt: o.pickupArrivedAt ? fmtDateTime(o.pickupArrivedAt) : undefined,
+
+    // Leg 2: Delivery Rider (Vendor -> Customer)
+    deliveryRiderId,
+    deliveryRiderDisplayId: deliveryRiderId ? formatRiderDisplayId(deliveryRiderId) : undefined,
+    deliveryRiderName: o.deliveryRider?.name ?? o.deliveryRiderName ?? (o.deliveryRider ? 'Assigned' : 'Unassigned'),
+    deliveryRiderPhone: o.deliveryRider?.phone ?? o.deliveryRiderPhone,
+    deliveryRiderDetails: o.deliveryRider
+      ? {
+          id: o.deliveryRider.id,
+          displayId: formatRiderDisplayId(o.deliveryRider.id),
+          name: o.deliveryRider.name,
+          phone: o.deliveryRider.phone,
+          vehicle: o.deliveryRider.vehicleType,
+          vehiclePlate: o.deliveryRider.vehicleNumber,
+        }
+      : undefined,
+    deliveryArrivedAt: o.deliveryArrivedAt ? fmtDateTime(o.deliveryArrivedAt) : undefined,
+    deliveredAt: o.deliveredAt ? fmtDateTime(o.deliveredAt) : undefined,
+
+    // Active / General Rider
+    riderName: o.rider?.name ?? o.riderName ?? o.pickupRider?.name ?? o.deliveryRider?.name ?? 'Unassigned',
+    riderDetails: o.rider
+      ? {
+          id: o.rider.id,
+          displayId: formatRiderDisplayId(o.rider.id),
+          name: o.rider.name,
+          phone: o.rider.phone,
+          vehicle: o.rider.vehicleType,
+          vehiclePlate: o.rider.vehicleNumber,
+        }
+      : undefined,
+
+    serviceName: o.serviceSummary ?? o.serviceName ?? 'Wash & Iron',
     itemsCount: o.itemsCount ?? 0,
-    itemDetails: o.itemsDescription ?? '',
+    itemDetails: o.itemsDescription ?? o.itemDetails ?? '',
     amount: Number(o.amount ?? o.pricing?.total ?? 0),
-    status: (o.statusLabel ?? title(o.status)) as OrderStatus,
+    status: (o.statusLabel ?? (o.status ? title(o.status) : 'Pending Pickup')) as OrderStatus,
     pickupDate: `${fmtDate(o.pickupDate)}${o.pickupSlot ? `, ${o.pickupSlot}` : ''}`,
-    createdAt: o.createdAt,
+    createdAt: o.createdAt ?? new Date().toISOString(),
     deliveryDate: o.deliveredAt ? fmtDateTime(o.deliveredAt) : o.deliveryEta ? fmtDateTime(o.deliveryEta) : undefined,
     paymentMethod: PAY_METHOD_LABEL[o.paymentMethod] ?? 'COD',
     paymentStatus: PAY_STATUS_LABEL[o.paymentStatus] ?? 'Pending',
     notes: o.notes ?? undefined,
+
+    otps: o.otps
+      ? {
+          customerPickup: o.otps.customerPickup ?? o.otps.pickup,
+          vendorDrop: o.otps.vendorDrop ?? o.otps.riderDrop,
+          vendorHandover: o.otps.vendorHandover ?? o.otps.riderHandover,
+          customerDelivery: o.otps.customerDelivery ?? o.otps.delivery,
+        }
+      : undefined,
+
+    events: Array.isArray(o.events)
+      ? o.events.map((e: Rec) => ({
+          id: e.id,
+          type: e.type,
+          status: e.status,
+          title: e.title ?? '',
+          description: e.description,
+          createdAt: fmtDateTime(e.createdAt),
+        }))
+      : undefined,
   };
 }
 
@@ -349,7 +440,26 @@ export function serviceToApi(s: Partial<ServiceCategory>) {
 
 export function orderToApi(o: Partial<Order>) {
   const out: Rec = {};
-  const copy = ['customerName', 'customerPhone', 'customerAddress', 'partnerName', 'riderName', 'serviceName', 'itemsCount', 'itemDetails', 'amount', 'status', 'pickupDate', 'deliveryDate', 'paymentMethod', 'paymentStatus', 'notes'] as const;
+  const copy = [
+    'customerName',
+    'customerPhone',
+    'customerAddress',
+    'partnerName',
+    'riderName',
+    'serviceName',
+    'itemsCount',
+    'itemDetails',
+    'amount',
+    'status',
+    'pickupDate',
+    'deliveryDate',
+    'paymentMethod',
+    'paymentStatus',
+    'notes',
+    'vendorId',
+    'pickupRiderId',
+    'deliveryRiderId',
+  ] as const;
   for (const k of copy) if (o[k] !== undefined) out[k] = o[k];
   return out;
 }

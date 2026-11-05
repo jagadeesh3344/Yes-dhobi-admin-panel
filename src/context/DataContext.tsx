@@ -108,9 +108,10 @@ interface DataContextType {
   addOrder: (order: Omit<Order, 'id' | 'createdAt'>) => Order;
   updateOrder: (id: string, updates: Partial<Order>) => void;
   updateOrderStatus: (id: string, status: OrderStatus) => void;
-  assignRiderToOrder: (orderId: string, riderName: string) => void;
+  assignRiderToOrder: (orderId: string, riderName: string, leg?: 'PICKUP' | 'DELIVERY') => void;
   assignPartnerToOrder: (orderId: string, partnerName: string) => void;
   deleteOrder: (id: string) => void;
+  deleteOrders: (ids: string[]) => Promise<void>;
 
   // Customer Operations
   addCustomer: (customer: Omit<Customer, 'id' | 'registeredDate'>) => Customer;
@@ -374,7 +375,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     socket.on('order:updated', (o: Record<string, unknown>) => {
       const mapped = toOrder(o);
       setOrders((prev) => {
-        const idx = prev.findIndex((x) => x.id === mapped.id);
+        const idx = prev.findIndex(
+          (x) => x.id === mapped.id || (mapped.orderNumber && x.orderNumber === mapped.orderNumber)
+        );
         if (idx === -1) return [mapped, ...prev];
         const next = [...prev];
         next[idx] = mapped;
@@ -444,31 +447,72 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const assignRiderToOrder = useCallback<DataContextType['assignRiderToOrder']>(
-    (orderId, riderName) => {
-      const rider = riders.find((r) => r.name === riderName);
+    (orderId, riderName, leg) => {
+      const rider = riders.find(
+        (r) => r.name === riderName || r.id === riderName || r.displayId === riderName
+      );
       if (!rider) {
-        showToast('Rider not found', `No rider named ${riderName}.`, 'error');
+        showToast('Rider not found', `No rider found matching "${riderName}".`, 'error');
         return;
       }
-      run(() => api.post(`/admin/orders/${orderKey(orderId)}/assign-rider`, { riderId: rider.id }), [refreshOrders, refreshRiders], ['Rider Assigned', `Rider ${riderName} dispatched to order ${orderId}.`]);
+      run(
+        () => api.post(`/admin/orders/${orderKey(orderId)}/assign-rider`, { riderId: rider.id, leg }),
+        [refreshOrders, refreshRiders],
+        ['Rider Assigned', `Rider ${rider.name} assigned to order ${orderId} (${leg || 'active leg'}).`]
+      );
     },
     [riders, run, refreshOrders, refreshRiders, showToast],
   );
 
   const assignPartnerToOrder = useCallback<DataContextType['assignPartnerToOrder']>(
     (orderId, partnerName) => {
-      const vendor = vendors.find((v) => v.name === partnerName);
+      const vendor = vendors.find(
+        (v) => v.name === partnerName || v.id === partnerName || v.displayId === partnerName
+      );
       if (!vendor) {
-        showToast('Vendor not found', `No laundry partner named ${partnerName}.`, 'error');
+        showToast('Vendor not found', `No laundry partner found matching "${partnerName}".`, 'error');
         return;
       }
-      run(() => api.post(`/admin/orders/${orderKey(orderId)}/assign-vendor`, { vendorId: vendor.id }), [refreshOrders, refreshVendors], ['Vendor Assigned', `Laundry partner changed to ${partnerName}.`]);
+      run(
+        () => api.post(`/admin/orders/${orderKey(orderId)}/assign-vendor`, { vendorId: vendor.id }),
+        [refreshOrders, refreshVendors],
+        ['Vendor Assigned', `Laundry partner changed to ${vendor.name}.`]
+      );
     },
     [vendors, run, refreshOrders, refreshVendors, showToast],
   );
 
   const deleteOrder = useCallback<DataContextType['deleteOrder']>(
-    (id) => run(() => api.delete(`/admin/orders/${orderKey(id)}`), [refreshOrders], ['Order Cancelled', `Order ${id} was cancelled.`, 'info']),
+    (id) => {
+      setOrders((prev) => prev.filter((o) => o.id !== id));
+      run(
+        () => api.delete(`/admin/orders/${orderKey(id)}`),
+        [refreshOrders],
+        ['Order Cancelled', `Order ${id} was cancelled.`, 'info']
+      );
+    },
+    [run, refreshOrders],
+  );
+
+  const deleteOrders = useCallback<DataContextType['deleteOrders']>(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const idSet = new Set(ids);
+      setOrders((prev) => prev.filter((o) => !idSet.has(o.id)));
+      run(
+        async () => {
+          await Promise.allSettled(
+            ids.map((id) =>
+              api.delete(`/admin/orders/${orderKey(id)}`).catch((err) => {
+                if (err?.status !== 404) console.warn('Delete order error:', err);
+              })
+            )
+          );
+        },
+        [refreshOrders],
+        ['Orders Cancelled', `${ids.length} order(s) cancelled/removed successfully.`, 'info']
+      );
+    },
     [run, refreshOrders],
   );
 
@@ -868,6 +912,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       assignRiderToOrder,
       assignPartnerToOrder,
       deleteOrder,
+      deleteOrders,
       addCustomer,
       updateCustomer,
       deleteCustomer,

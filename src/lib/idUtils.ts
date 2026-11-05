@@ -57,3 +57,4 @@ export function formatRiderDisplayId(id: string): string {
   if (!id) return 'RDR-10000';
   return `RDR-${get5DigitNumber(id)}`;
 }
+

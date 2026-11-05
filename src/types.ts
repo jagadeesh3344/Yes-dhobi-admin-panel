@@ -11,13 +11,64 @@ export type OrderStatus =
   | 'Delivered'
   | 'Cancelled';
 
+export interface OrderLegRider {
+  id?: string;
+  displayId?: string;
+  name: string;
+  phone?: string;
+  vehicle?: string;
+  vehiclePlate?: string;
+}
+
+export interface OrderVendorInfo {
+  id?: string;
+  displayId?: string;
+  registrationId?: string;
+  name: string;
+  ownerName?: string;
+  phone?: string;
+  address?: string;
+  location?: string;
+}
+
 export interface Order {
   id: string;
+  orderNumber?: string;
+  customerId?: string;
+  customerDisplayId?: string;
   customerName: string;
   customerPhone: string;
   customerAddress?: string;
+
+  // Vendor Hub
+  vendorId?: string;
+  vendorDisplayId?: string;
   partnerName: string;
+  vendorDetails?: OrderVendorInfo;
+
+  // Leg 1: Pickup Rider (Customer -> Vendor)
+  pickupRiderId?: string;
+  pickupRiderDisplayId?: string;
+  pickupRiderName?: string;
+  pickupRiderPhone?: string;
+  pickupRiderDetails?: OrderLegRider;
+  pickedUpAt?: string;
+  pickupArrivedAt?: string;
+
+  // Leg 2: Delivery Rider (Vendor -> Customer)
+  deliveryRiderId?: string;
+  deliveryRiderDisplayId?: string;
+  deliveryRiderName?: string;
+  deliveryRiderPhone?: string;
+  deliveryRiderDetails?: OrderLegRider;
+  deliveryArrivedAt?: string;
+  deliveredAt?: string;
+
+  // Active / General Rider
   riderName: string;
+  riderDetails?: OrderLegRider;
+
+  // Service & Items
   serviceName: string;
   itemsCount: number;
   itemDetails?: string;
@@ -29,6 +80,24 @@ export interface Order {
   paymentMethod: 'UPI' | 'Card' | 'COD' | 'Wallet';
   paymentStatus: 'Paid' | 'Pending' | 'Refunded';
   notes?: string;
+
+  // 4 Handoff Security OTPs
+  otps?: {
+    customerPickup?: string;
+    vendorDrop?: string;
+    vendorHandover?: string;
+    customerDelivery?: string;
+  };
+
+  // Timeline events
+  events?: Array<{
+    id?: string;
+    type?: string;
+    status?: string;
+    title: string;
+    description?: string;
+    createdAt?: string;
+  }>;
 }
 
 export interface Customer {
