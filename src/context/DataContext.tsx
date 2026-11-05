@@ -116,18 +116,21 @@ interface DataContextType {
   addCustomer: (customer: Omit<Customer, 'id' | 'registeredDate'>) => Customer;
   updateCustomer: (id: string, updates: Partial<Customer>) => void;
   deleteCustomer: (id: string) => void;
+  deleteCustomers: (ids: string[]) => Promise<void>;
 
   // Vendor Operations
   addVendor: (vendor: Omit<Vendor, 'id' | 'joinedDate'>) => Vendor;
   updateVendor: (id: string, updates: Partial<Vendor>) => void;
   toggleVendorStatus: (id: string) => void;
   deleteVendor: (id: string) => void;
+  deleteVendors: (ids: string[]) => Promise<void>;
 
   // Rider Operations
   addRider: (rider: Omit<Rider, 'id'>) => Rider;
   updateRider: (id: string, updates: Partial<Rider>) => void;
   toggleRiderStatus: (id: string) => void;
   deleteRider: (id: string) => void;
+  deleteRiders: (ids: string[]) => Promise<void>;
 
   // Services & Pricing Operations
   addService: (service: Omit<ServiceCategory, 'id'>) => ServiceCategory;
@@ -485,7 +488,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [run, refreshCustomers],
   );
   const deleteCustomer = useCallback<DataContextType['deleteCustomer']>(
-    (id) => run(() => api.delete(`/admin/customers/${id}`), [refreshCustomers], ['Customer Deactivated', 'The account can no longer sign in.', 'info']),
+    (id) => {
+      setCustomers((prev) => prev.filter((c) => c.id !== id));
+      run(
+        async () => {
+          try {
+            await api.delete(`/admin/customers/${id}`);
+          } catch (err: any) {
+            if (err?.status !== 404) throw err;
+          }
+        },
+        [refreshCustomers],
+        ['Customer Deleted', 'Customer account has been removed.', 'info'],
+      );
+    },
+    [run, refreshCustomers],
+  );
+
+  const deleteCustomers = useCallback<DataContextType['deleteCustomers']>(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const idSet = new Set(ids);
+      setCustomers((prev) => prev.filter((c) => !idSet.has(c.id)));
+      run(
+        async () => {
+          await Promise.allSettled(
+            ids.map((id) =>
+              api.delete(`/admin/customers/${id}`).catch((err) => {
+                if (err?.status !== 404) console.warn('Delete customer error:', err);
+              }),
+            ),
+          );
+        },
+        [refreshCustomers],
+        ['Customers Deleted', `${ids.length} customer(s) deleted successfully.`, 'info'],
+      );
+    },
     [run, refreshCustomers],
   );
 
@@ -514,7 +552,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [vendors, run, refreshVendors],
   );
   const deleteVendor = useCallback<DataContextType['deleteVendor']>(
-    (id) => run(() => api.delete(`/admin/vendors/${id}`), [refreshVendors], ['Vendor Deactivated', 'Partner removed from dispatch.', 'info']),
+    (id) => {
+      setVendors((prev) => prev.filter((v) => v.id !== id));
+      run(
+        async () => {
+          try {
+            await api.delete(`/admin/vendors/${id}`);
+          } catch (err: any) {
+            if (err?.status !== 404) throw err;
+          }
+        },
+        [refreshVendors],
+        ['Vendor Deleted', 'Partner removed from dispatch.', 'info'],
+      );
+    },
+    [run, refreshVendors],
+  );
+
+  const deleteVendors = useCallback<DataContextType['deleteVendors']>(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const idSet = new Set(ids);
+      setVendors((prev) => prev.filter((v) => !idSet.has(v.id)));
+      run(
+        async () => {
+          await Promise.allSettled(
+            ids.map((id) =>
+              api.delete(`/admin/vendors/${id}`).catch((err) => {
+                if (err?.status !== 404) console.warn('Delete vendor error:', err);
+              }),
+            ),
+          );
+        },
+        [refreshVendors],
+        ['Vendors Deleted', `${ids.length} vendor(s) deleted successfully.`, 'info'],
+      );
+    },
     [run, refreshVendors],
   );
 
@@ -543,7 +616,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [riders, run, refreshRiders],
   );
   const deleteRider = useCallback<DataContextType['deleteRider']>(
-    (id) => run(() => api.delete(`/admin/riders/${id}`), [refreshRiders], ['Rider Deactivated', 'Rider removed from the fleet.', 'info']),
+    (id) => {
+      setRiders((prev) => prev.filter((r) => r.id !== id));
+      run(
+        async () => {
+          try {
+            await api.delete(`/admin/riders/${id}`);
+          } catch (err: any) {
+            if (err?.status !== 404) throw err;
+          }
+        },
+        [refreshRiders],
+        ['Rider Deleted', 'Rider removed from the fleet.', 'info'],
+      );
+    },
+    [run, refreshRiders],
+  );
+
+  const deleteRiders = useCallback<DataContextType['deleteRiders']>(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const idSet = new Set(ids);
+      setRiders((prev) => prev.filter((r) => !idSet.has(r.id)));
+      run(
+        async () => {
+          await Promise.allSettled(
+            ids.map((id) =>
+              api.delete(`/admin/riders/${id}`).catch((err) => {
+                if (err?.status !== 404) console.warn('Delete rider error:', err);
+              }),
+            ),
+          );
+        },
+        [refreshRiders],
+        ['Riders Deleted', `${ids.length} rider(s) deleted successfully.`, 'info'],
+      );
+    },
     [run, refreshRiders],
   );
 
@@ -763,14 +871,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addCustomer,
       updateCustomer,
       deleteCustomer,
+      deleteCustomers,
       addVendor,
       updateVendor,
       toggleVendorStatus,
       deleteVendor,
+      deleteVendors,
       addRider,
       updateRider,
       toggleRiderStatus,
       deleteRider,
+      deleteRiders,
       addService,
       updateService,
       toggleServiceStatus,

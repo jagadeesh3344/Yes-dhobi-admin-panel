@@ -1,23 +1,26 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Download, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Download, Star, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { VendorModal } from '@/components/modals/VendorModal';
+import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { exportToCsv } from '@/lib/exportCsv';
 import { Vendor } from '@/types';
 
 export default function Vendors() {
-  const { vendors } = useData();
+  const { vendors, deleteVendor, deleteVendors } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedZone, setSelectedZone] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [vendorToEdit, setVendorToEdit] = useState<Vendor | null>(null);
+  const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null);
+  const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
-
 
   const combinedVendors = vendors;
 
@@ -29,7 +32,10 @@ export default function Vendors() {
         vendor.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
         vendor.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesZone = selectedZone === 'All' || vendor.zone.toLowerCase().includes(selectedZone.toLowerCase()) || vendor.location.toLowerCase().includes(selectedZone.toLowerCase());
+      const matchesZone =
+        selectedZone === 'All' ||
+        vendor.zone.toLowerCase().includes(selectedZone.toLowerCase()) ||
+        vendor.location.toLowerCase().includes(selectedZone.toLowerCase());
 
       const matchesStatus =
         selectedStatus === 'All' ||
@@ -48,6 +54,29 @@ export default function Vendors() {
   }, [filteredVendors, currentPage]);
 
   const totalPages = Math.ceil(filteredVendors.length / itemsPerPage) || 1;
+
+  // Checkbox selection helpers
+  const isAllSelected =
+    paginatedVendors.length > 0 &&
+    paginatedVendors.every((v) => selectedVendorIds.includes(v.id));
+  const isSomeSelected =
+    paginatedVendors.some((v) => selectedVendorIds.includes(v.id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      const pageIds = new Set(paginatedVendors.map((v) => v.id));
+      setSelectedVendorIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    } else {
+      const pageIds = paginatedVendors.map((v) => v.id);
+      setSelectedVendorIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedVendorIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   const handleExport = () => {
     exportToCsv(
@@ -165,12 +194,53 @@ export default function Vendors() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedVendorIds.length > 0 && (
+        <div className="flex items-center justify-between bg-rose-50 border border-rose-200 text-rose-900 px-4 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <span className="text-xs font-semibold">
+              {selectedVendorIds.length} vendor{selectedVendorIds.length > 1 ? 's' : ''} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedVendorIds([])}
+              className="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-white/60 rounded-lg transition-colors cursor-pointer"
+            >
+              Clear selection
+            </button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="h-8 px-3 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Selected ({selectedVendorIds.length})
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Vendors Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="text-[11px] text-slate-500 uppercase font-semibold border-b border-slate-100 bg-slate-50/70">
               <tr>
+                <th className="w-10 px-4 py-3.5">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = isSomeSelected;
+                    }}
+                    onChange={handleSelectAll}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                    title="Select all on this page"
+                  />
+                </th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Vendor ID</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Vendor / Shop Name</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Owner & Contact</th>
@@ -186,11 +256,23 @@ export default function Vendors() {
             <tbody className="divide-y divide-slate-100">
               {paginatedVendors.map((vendor) => {
                 const statusMeta = getStatusDisplay(vendor.status);
+                const isSelected = selectedVendorIds.includes(vendor.id);
                 return (
                   <tr
                     key={vendor.id}
-                    className="hover:bg-slate-50/60 transition-colors"
+                    className={`transition-colors ${
+                      isSelected ? 'bg-blue-50/50 hover:bg-blue-50/70' : 'hover:bg-slate-50/60'
+                    }`}
                   >
+                    <td className="w-10 px-4 py-3.5">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(vendor.id)}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                        aria-label={`Select vendor ${vendor.name}`}
+                      />
+                    </td>
                     <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{vendor.id}</td>
                     <td className="px-5 py-3.5 font-semibold text-slate-900 whitespace-nowrap">{vendor.name}</td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
@@ -219,15 +301,24 @@ export default function Vendors() {
                       <span>{vendor.rating.toFixed(1)}</span>
                     </td>
                     <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          setVendorToEdit(vendor);
-                          setIsModalOpen(true);
-                        }}
-                        className="px-3.5 py-1 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                      >
-                        Manage
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => {
+                            setVendorToEdit(vendor);
+                            setIsModalOpen(true);
+                          }}
+                          className="px-3.5 py-1 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                        >
+                          Manage
+                        </button>
+                        <button
+                          onClick={() => setVendorToDelete(vendor)}
+                          title="Delete Vendor"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -235,7 +326,7 @@ export default function Vendors() {
 
               {paginatedVendors.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="text-center py-10 text-slate-400">
+                  <td colSpan={11} className="text-center py-10 text-slate-400">
                     No laundry vendors found matching your filter criteria.
                   </td>
                 </tr>
@@ -246,7 +337,9 @@ export default function Vendors() {
 
         {/* Table Footer with Pagination */}
         <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-white">
-          <p>Showing {filteredVendors.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredVendors.length)} of {filteredVendors.length} verified vendor hubs</p>
+          <p>
+            Showing {filteredVendors.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredVendors.length)} of {filteredVendors.length} verified vendor hubs
+          </p>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -293,6 +386,36 @@ export default function Vendors() {
           setVendorToEdit(null);
         }}
         vendorToEdit={vendorToEdit}
+      />
+
+      {/* Single Vendor Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!vendorToDelete}
+        onClose={() => setVendorToDelete(null)}
+        onConfirm={() => {
+          if (vendorToDelete) {
+            deleteVendor(vendorToDelete.id);
+            setSelectedVendorIds((prev) => prev.filter((id) => id !== vendorToDelete.id));
+            setVendorToDelete(null);
+          }
+        }}
+        title={`Delete Vendor ${vendorToDelete?.name || ''}?`}
+        description={`Are you sure you want to delete ${vendorToDelete?.name || 'this vendor'} (Owner: ${vendorToDelete?.owner || 'Partner'}, ${vendorToDelete?.location || ''})? This will deactivate their hub and remove them from active dispatch.`}
+        confirmText="Yes, Delete Vendor"
+      />
+
+      {/* Bulk Delete Vendors Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={() => {
+          deleteVendors(selectedVendorIds);
+          setSelectedVendorIds([]);
+          setIsBulkDeleteModalOpen(false);
+        }}
+        title={`Delete ${selectedVendorIds.length} Selected Vendors?`}
+        description={`Are you sure you want to permanently delete and deactivate the ${selectedVendorIds.length} selected vendor partners? This will remove them from active dispatch and orders.`}
+        confirmText={`Yes, Delete (${selectedVendorIds.length}) Vendors`}
       />
     </div>
   );

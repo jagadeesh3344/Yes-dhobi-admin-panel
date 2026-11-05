@@ -1,23 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Download, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { CustomerModal } from '@/components/modals/CustomerModal';
+import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { exportToCsv } from '@/lib/exportCsv';
 import { Customer } from '@/types';
 
 export default function Customers() {
-  const { customers } = useData();
+  const { customers, deleteCustomer, deleteCustomers } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // Extended customer list strictly matching the image 3 screenshot
 
   const combinedCustomers = customers;
 
@@ -46,6 +48,29 @@ export default function Customers() {
   }, [filteredCustomers, currentPage]);
 
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage) || 1;
+
+  // Checkbox selection helpers
+  const isAllSelected =
+    paginatedCustomers.length > 0 &&
+    paginatedCustomers.every((c) => selectedCustomerIds.includes(c.id));
+  const isSomeSelected =
+    paginatedCustomers.some((c) => selectedCustomerIds.includes(c.id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      const pageIds = new Set(paginatedCustomers.map((c) => c.id));
+      setSelectedCustomerIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    } else {
+      const pageIds = paginatedCustomers.map((c) => c.id);
+      setSelectedCustomerIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedCustomerIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   const handleExport = () => {
     exportToCsv(
@@ -121,12 +146,53 @@ export default function Customers() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedCustomerIds.length > 0 && (
+        <div className="flex items-center justify-between bg-rose-50 border border-rose-200 text-rose-900 px-4 py-2.5 rounded-xl animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <span className="text-xs font-semibold">
+              {selectedCustomerIds.length} customer{selectedCustomerIds.length > 1 ? 's' : ''} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedCustomerIds([])}
+              className="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-white/60 rounded-lg transition-colors cursor-pointer"
+            >
+              Clear selection
+            </button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="h-8 px-3 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Selected ({selectedCustomerIds.length})
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Customer Registry Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="text-[11px] text-slate-500 uppercase font-semibold border-b border-slate-100 bg-slate-50/70">
               <tr>
+                <th className="w-10 px-4 py-3.5">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = isSomeSelected;
+                    }}
+                    onChange={handleSelectAll}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                    title="Select all on this page"
+                  />
+                </th>
                 <th className="px-5 py-3.5 whitespace-nowrap">ID</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Customer Name</th>
                 <th className="px-5 py-3.5 whitespace-nowrap">Phone</th>
@@ -139,49 +205,72 @@ export default function Customers() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedCustomers.map((customer) => (
-                <tr
-                  key={customer.id}
-                  className="hover:bg-slate-50/60 transition-colors"
-                >
-                  <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{customer.id}</td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <div className="font-semibold text-slate-900">{customer.name}</div>
-                    <div className="text-[11px] text-slate-500 font-medium truncate max-w-[220px]">
-                      {[customer.address, customer.city, customer.pincode].filter(Boolean).join(', ') || 'No address saved'}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">{customer.phone}</td>
-                  <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{customer.email}</td>
-                  <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{customer.totalOrders} orders</td>
-                  <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">₹{customer.walletBalance.toLocaleString()}</td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap min-w-[75px] ${getStatusBadge(
-                        customer.status
-                      )}`}
-                    >
-                      {customer.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{customer.registeredDate}</td>
-                  <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                    <button
-                      onClick={() => {
-                        setCustomerToEdit(customer);
-                        setIsModalOpen(true);
-                      }}
-                      className="px-3 py-1 text-xs font-bold text-blue-600 bg-blue-50/60 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
-                    >
-                      View Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {paginatedCustomers.map((customer) => {
+                const isSelected = selectedCustomerIds.includes(customer.id);
+                return (
+                  <tr
+                    key={customer.id}
+                    className={`transition-colors ${
+                      isSelected ? 'bg-blue-50/50 hover:bg-blue-50/70' : 'hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <td className="w-10 px-4 py-3.5">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(customer.id)}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                        aria-label={`Select customer ${customer.name}`}
+                      />
+                    </td>
+                    <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">{customer.id}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <div className="font-semibold text-slate-900">{customer.name}</div>
+                      <div className="text-[11px] text-slate-500 font-medium truncate max-w-[220px]">
+                        {[customer.address, customer.city, customer.pincode].filter(Boolean).join(', ') || 'No address saved'}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">{customer.phone}</td>
+                    <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{customer.email}</td>
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{customer.totalOrders} orders</td>
+                    <td className="px-5 py-3.5 font-bold text-slate-900 whitespace-nowrap">₹{customer.walletBalance.toLocaleString()}</td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap min-w-[75px] ${getStatusBadge(
+                          customer.status
+                        )}`}
+                      >
+                        {customer.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">{customer.registeredDate}</td>
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => {
+                            setCustomerToEdit(customer);
+                            setIsModalOpen(true);
+                          }}
+                          className="px-3 py-1 text-xs font-bold text-blue-600 bg-blue-50/60 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => setCustomerToDelete(customer)}
+                          title="Delete Customer"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
 
               {paginatedCustomers.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-400">
+                  <td colSpan={10} className="text-center py-10 text-slate-400">
                     No customers found matching your filter criteria.
                   </td>
                 </tr>
@@ -233,7 +322,7 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Customer Modal */}
+      {/* Customer Edit/Add Modal */}
       <CustomerModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -241,6 +330,36 @@ export default function Customers() {
           setCustomerToEdit(null);
         }}
         customerToEdit={customerToEdit}
+      />
+
+      {/* Single Customer Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!customerToDelete}
+        onClose={() => setCustomerToDelete(null)}
+        onConfirm={() => {
+          if (customerToDelete) {
+            deleteCustomer(customerToDelete.id);
+            setSelectedCustomerIds((prev) => prev.filter((id) => id !== customerToDelete.id));
+            setCustomerToDelete(null);
+          }
+        }}
+        title={`Delete Customer ${customerToDelete?.name || ''}?`}
+        description={`Are you sure you want to delete ${customerToDelete?.name || 'this customer'} (${customerToDelete?.phone || customerToDelete?.id})? This will deactivate their account and remove them from active records.`}
+        confirmText="Yes, Delete Customer"
+      />
+
+      {/* Bulk Delete Customers Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={() => {
+          deleteCustomers(selectedCustomerIds);
+          setSelectedCustomerIds([]);
+          setIsBulkDeleteModalOpen(false);
+        }}
+        title={`Delete ${selectedCustomerIds.length} Selected Customers?`}
+        description={`Are you sure you want to permanently delete and deactivate the ${selectedCustomerIds.length} selected customer accounts? This action will remove them from active records.`}
+        confirmText={`Yes, Delete (${selectedCustomerIds.length}) Customers`}
       />
     </div>
   );
