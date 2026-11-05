@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Bike,
   Store,
   User,
   Phone,
-  MapPin,
-  ShieldCheck,
   Copy,
   Check,
   CheckCircle,
   Clock,
-  ArrowRight,
   Package,
-  Key,
-  AlertCircle,
-  RefreshCw,
   Truck,
   Sparkles,
 } from 'lucide-react';
@@ -110,7 +103,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
 
   const handleQuickStatus = (newStatus: OrderStatus) => {
     updateOrderStatus(order.id, newStatus);
-    showToast('Status Updated', `Order ${order.id} marked as "${newStatus}".`, 'success');
+    showToast('Status Updated', `Order ${order.id} moved to "${newStatus}".`, 'success');
   };
 
   const handleAssignPickup = () => {
@@ -135,8 +128,8 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Live Tracking & Logistics Flow — ${order.id}`}
-      subtitle="Complete 2-Leg Journey Transparency: Customer ➔ Pickup Rider ➔ Vendor Hub ➔ Delivery Rider ➔ Customer"
+      title={`Track Order — ${order.id}`}
+      subtitle="Complete 2-Leg Journey Progression: Customer ➔ Pickup Rider ➔ Vendor Hub ➔ Delivery Rider ➔ Customer"
       maxWidth="4xl"
       footer={
         <div className="flex items-center justify-between w-full">
@@ -158,13 +151,13 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
               </Button>
             )}
             <Button size="sm" onClick={onClose}>
-              Close Tracking
+              Close
             </Button>
           </div>
         </div>
       }
     >
-      <div className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
+      <div className="space-y-5 max-h-[75vh] overflow-y-auto pr-1">
         {/* Top Summary Bar */}
         <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-slate-50 p-4 rounded-2xl border border-blue-100 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -177,7 +170,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleCopy(order.id, 'Order ID')}
-                  className="text-slate-400 hover:text-blue-600 transition-colors"
+                  className="text-slate-400 hover:text-blue-600 transition-colors p-0.5 rounded"
                   title="Copy Order ID"
                 >
                   {copiedKey === 'Order ID' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -187,7 +180,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Service: <strong className="text-slate-700">{order.serviceName}</strong> • {order.itemsCount} Items • Bill: <strong className="text-emerald-700">₹{order.amount}</strong> ({order.paymentStatus})
+                Service: <strong className="text-slate-700">{order.serviceName}</strong> • {order.itemsCount} Items • Total: <strong className="text-emerald-700">₹{order.amount}</strong> ({order.paymentStatus})
               </p>
             </div>
           </div>
@@ -293,13 +286,13 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                   <div className="flex justify-between">
                     <span className="text-slate-500">Customer Pickup:</span>
                     <span className="font-semibold text-slate-800">
-                      {isPickedUp ? (order.pickedUpAt || 'Completed ✓') : 'Pending Doorstep OTP'}
+                      {isPickedUp ? (order.pickedUpAt || 'Picked Up ✓') : 'Awaiting Doorstep Pickup'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Hub Delivery:</span>
                     <span className="font-semibold text-slate-800">
-                      {isDroppedAtHub ? 'Received by Hub ✓' : 'Pending Drop OTP'}
+                      {isDroppedAtHub ? 'Received at Facility ✓' : (isPickedUp ? 'In Transit to Hub' : 'Pending Hub Drop')}
                     </span>
                   </div>
                 </div>
@@ -359,7 +352,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                   <div className="flex justify-between">
                     <span className="text-slate-500">Wash & Care:</span>
                     <span className="font-semibold text-slate-800">
-                      {['Washing', 'Ironing', 'Quality Check', 'Ready', 'Out for Delivery', 'Delivered'].includes(status) ? 'In Progress / Done' : 'Pending'}
+                      {['Washing', 'Ironing', 'Quality Check', 'Ready', 'Out for Delivery', 'Delivered'].includes(status) ? 'In Progress / Done' : 'Pending Arrival'}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -411,7 +404,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Delivery Rider (Leg 2)</p>
                   <div className="flex items-center justify-between mt-0.5">
                     <span className="font-bold text-slate-900 text-sm">
-                      {order.deliveryRiderName || (isReady ? 'Unassigned (Dispatch Needed)' : 'Queued')}
+                      {order.deliveryRiderName || (isReady ? 'Unassigned (Dispatch Ready)' : 'Queued')}
                     </span>
                     {order.deliveryRiderDisplayId && (
                       <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
@@ -435,13 +428,13 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                   <div className="flex justify-between">
                     <span className="text-slate-500">Hub Handover:</span>
                     <span className="font-semibold text-slate-800">
-                      {isOutForDelivery || isDelivered ? 'Collected from Hub ✓' : 'Pending Handover OTP'}
+                      {isOutForDelivery || isDelivered ? 'Collected from Hub ✓' : (isReady ? 'Ready for Handover' : 'Awaiting Laundry')}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Final Handover:</span>
                     <span className="font-semibold text-slate-800">
-                      {isDelivered ? (order.deliveryDate || 'Delivered ✓') : 'Pending Customer OTP'}
+                      {isDelivered ? (order.deliveryDate || 'Delivered to Doorstep ✓') : (isOutForDelivery ? 'En Route to Doorstep' : 'Pending Delivery')}
                     </span>
                   </div>
                 </div>
@@ -450,184 +443,64 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
           </div>
         </div>
 
-        {/* 4 Security Handoff OTPs Assist Section */}
-        <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-amber-400" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-200">
-                Support Security Handoff OTPs
-              </h3>
-            </div>
-            <span className="text-[11px] text-slate-400">
-              For Support Hotline verification & rider assist
-            </span>
+        {/* Quick Operations Controls - Perfected Spacing & Full-Width Buttons */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Logistics Dispatch & Fast Stage Actions
+            </h4>
+            <span className="text-[11px] text-slate-400 font-medium">Assign or advance order legs</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {/* OTP 1: Customer Pickup */}
-            <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Customer Pickup</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-900/60 text-blue-300">
-                    Leg 1 Doorstep
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">Rider enters at pickup</p>
-                <div className="my-2 text-center">
-                  <span className="text-2xl font-black font-mono tracking-widest text-blue-400">
-                    {order.otps?.customerPickup || '••••'}
-                  </span>
-                </div>
-              </div>
-              {order.otps?.customerPickup && (
-                <button
-                  type="button"
-                  onClick={() => handleCopy(order.otps!.customerPickup!, 'Customer Pickup OTP')}
-                  className="w-full mt-1 py-1 text-[11px] font-semibold rounded bg-slate-700/80 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 transition-colors"
-                >
-                  {copiedKey === 'Customer Pickup OTP' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  Copy Code
-                </button>
-              )}
-            </div>
-
-            {/* OTP 2: Vendor Drop */}
-            <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Vendor Drop</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-900/60 text-indigo-300">
-                    Hub Arrival
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">Rider drops at Vendor</p>
-                <div className="my-2 text-center">
-                  <span className="text-2xl font-black font-mono tracking-widest text-indigo-400">
-                    {order.otps?.vendorDrop || '••••'}
-                  </span>
-                </div>
-              </div>
-              {order.otps?.vendorDrop && (
-                <button
-                  type="button"
-                  onClick={() => handleCopy(order.otps!.vendorDrop!, 'Vendor Drop OTP')}
-                  className="w-full mt-1 py-1 text-[11px] font-semibold rounded bg-slate-700/80 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 transition-colors"
-                >
-                  {copiedKey === 'Vendor Drop OTP' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  Copy Code
-                </button>
-              )}
-            </div>
-
-            {/* OTP 3: Vendor Handover */}
-            <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Vendor Handover</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-900/60 text-purple-300">
-                    Leg 2 Dispatch
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">Rider 2 collects from Hub</p>
-                <div className="my-2 text-center">
-                  <span className="text-2xl font-black font-mono tracking-widest text-purple-400">
-                    {order.otps?.vendorHandover || '••••'}
-                  </span>
-                </div>
-              </div>
-              {order.otps?.vendorHandover && (
-                <button
-                  type="button"
-                  onClick={() => handleCopy(order.otps!.vendorHandover!, 'Vendor Handover OTP')}
-                  className="w-full mt-1 py-1 text-[11px] font-semibold rounded bg-slate-700/80 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 transition-colors"
-                >
-                  {copiedKey === 'Vendor Handover OTP' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  Copy Code
-                </button>
-              )}
-            </div>
-
-            {/* OTP 4: Customer Delivery */}
-            <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Customer Delivery</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-900/60 text-emerald-300">
-                    Final Handoff
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">Rider 2 enters at doorstep</p>
-                <div className="my-2 text-center">
-                  <span className="text-2xl font-black font-mono tracking-widest text-emerald-400">
-                    {order.otps?.customerDelivery || '••••'}
-                  </span>
-                </div>
-              </div>
-              {order.otps?.customerDelivery && (
-                <button
-                  type="button"
-                  onClick={() => handleCopy(order.otps!.customerDelivery!, 'Customer Delivery OTP')}
-                  className="w-full mt-1 py-1 text-[11px] font-semibold rounded bg-slate-700/80 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 transition-colors"
-                >
-                  {copiedKey === 'Customer Delivery OTP' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  Copy Code
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-slate-800/40 p-2.5 rounded-lg border border-slate-800">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span>
-              If rider or customer reports app sync failure or offline mobile status, verify their registered phone number and verbally assist them using the corresponding OTP above.
-            </span>
-          </div>
-        </div>
-
-        {/* Quick Operations Controls */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Quick Support Dispatch & Status Actions
-          </h4>
-
-          {/* Quick Dispatch Assignment Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Clean 3-Card Dispatch Controls - Zero Overlap */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {/* Reassign Leg 1 Pickup Rider */}
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-600 block">
-                Assign Leg 1 Pickup Rider
-              </label>
-              <div className="flex gap-1.5">
+            <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between gap-2.5">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Bike className="w-3.5 h-3.5 text-blue-600" />
+                    Leg 1 • Pickup Rider
+                  </label>
+                  <span className="text-[10px] text-slate-400">Customer ➔ Hub</span>
+                </div>
                 <select
                   value={selectedPickupRider}
                   onChange={(e) => setSelectedPickupRider(e.target.value)}
-                  className="flex-1 text-xs bg-white border border-slate-200 rounded-lg p-1.5"
+                  className="w-full h-9 px-2.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 outline-none"
                 >
-                  <option value="">Select Rider...</option>
+                  <option value="">Select Pickup Rider...</option>
                   {riders.map((r) => (
                     <option key={r.id} value={r.name}>
                       {r.name} ({r.displayId || 'RDR'}) - {r.status}
                     </option>
                   ))}
                 </select>
-                <Button size="sm" className="h-8 text-xs" onClick={handleAssignPickup} disabled={!selectedPickupRider}>
-                  Assign
-                </Button>
               </div>
+              <Button
+                size="sm"
+                className="w-full h-8 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-2xs transition-colors"
+                onClick={handleAssignPickup}
+                disabled={!selectedPickupRider}
+              >
+                Assign Pickup Rider
+              </Button>
             </div>
 
             {/* Reassign Vendor Hub */}
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-600 block">
-                Reassign Vendor Hub
-              </label>
-              <div className="flex gap-1.5">
+            <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between gap-2.5">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Store className="w-3.5 h-3.5 text-purple-600" />
+                    Vendor Hub Facility
+                  </label>
+                  <span className="text-[10px] text-slate-400">Washing & Ironing</span>
+                </div>
                 <select
                   value={selectedVendor}
                   onChange={(e) => setSelectedVendor(e.target.value)}
-                  className="flex-1 text-xs bg-white border border-slate-200 rounded-lg p-1.5"
+                  className="w-full h-9 px-2.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:ring-2 focus:ring-purple-500 outline-none"
                 >
                   <option value="">Select Vendor Hub...</option>
                   {vendors.map((v) => (
@@ -636,39 +509,53 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
                     </option>
                   ))}
                 </select>
-                <Button size="sm" className="h-8 text-xs" onClick={handleAssignVendor} disabled={!selectedVendor}>
-                  Assign
-                </Button>
               </div>
+              <Button
+                size="sm"
+                className="w-full h-8 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-2xs transition-colors"
+                onClick={handleAssignVendor}
+                disabled={!selectedVendor}
+              >
+                Assign Vendor Hub
+              </Button>
             </div>
 
             {/* Reassign Leg 2 Delivery Rider */}
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-600 block">
-                Assign Leg 2 Delivery Rider
-              </label>
-              <div className="flex gap-1.5">
+            <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between gap-2.5">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                    Leg 2 • Delivery Rider
+                  </label>
+                  <span className="text-[10px] text-slate-400">Hub ➔ Customer</span>
+                </div>
                 <select
                   value={selectedDeliveryRider}
                   onChange={(e) => setSelectedDeliveryRider(e.target.value)}
-                  className="flex-1 text-xs bg-white border border-slate-200 rounded-lg p-1.5"
+                  className="w-full h-9 px-2.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
                 >
-                  <option value="">Select Rider...</option>
+                  <option value="">Select Delivery Rider...</option>
                   {riders.map((r) => (
                     <option key={r.id} value={r.name}>
                       {r.name} ({r.displayId || 'RDR'}) - {r.status}
                     </option>
                   ))}
                 </select>
-                <Button size="sm" className="h-8 text-xs" onClick={handleAssignDelivery} disabled={!selectedDeliveryRider}>
-                  Assign
-                </Button>
               </div>
+              <Button
+                size="sm"
+                className="w-full h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-2xs transition-colors"
+                onClick={handleAssignDelivery}
+                disabled={!selectedDeliveryRider}
+              >
+                Assign Delivery Rider
+              </Button>
             </div>
           </div>
 
           {/* Quick Status Transition Buttons */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
             <span className="text-xs font-semibold text-slate-500 mr-1">Fast Stage Advance:</span>
             {!isPickedUp && (
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleQuickStatus('Picked Up')}>
@@ -696,7 +583,7 @@ export const OrderFlowModal: React.FC<OrderFlowModalProps> = ({
               </Button>
             )}
             {!isDelivered && (
-              <Button size="sm" variant="outline" className="h-7 text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" onClick={() => handleQuickStatus('Delivered')}>
+              <Button size="sm" variant="outline" className="h-7 text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 font-bold" onClick={() => handleQuickStatus('Delivered')}>
                 Mark Delivered ✓
               </Button>
             )}

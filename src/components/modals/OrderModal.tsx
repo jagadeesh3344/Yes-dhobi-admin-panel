@@ -3,8 +3,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Order, OrderStatus } from '@/types';
 import { useData } from '@/context/DataContext';
-import { Bike, Store, User, Key, Check, Copy } from 'lucide-react';
-import { useToast } from '@/context/ToastContext';
+import { Bike, Store, User } from 'lucide-react';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -14,7 +13,6 @@ interface OrderModalProps {
 
 export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderToEdit }) => {
   const { addOrder, updateOrder, assignRiderToOrder, assignPartnerToOrder, customers, vendors, riders, services } = useData();
-  const { showToast } = useToast();
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -32,7 +30,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Card' | 'COD' | 'Wallet'>('UPI');
   const [paymentStatus, setPaymentStatus] = useState<'Paid' | 'Pending' | 'Refunded'>('Paid');
   const [notes, setNotes] = useState('');
-  const [copiedOtp, setCopiedOtp] = useState<string | null>(null);
 
   useEffect(() => {
     if (orderToEdit) {
@@ -83,13 +80,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
       setCustomerPhone(found.phone);
       setCustomerAddress(found.address);
     }
-  };
-
-  const handleCopyOtp = (code: string, label: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedOtp(label);
-    showToast('Copied OTP', `${label}: ${code}`, 'info');
-    setTimeout(() => setCopiedOtp(null), 2000);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -433,70 +423,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
             placeholder="e.g. Ring doorbell, separate delicate whites, starch cuffs"
           />
         </div>
-
-        {/* Existing Security OTPs display (read-only for support) */}
-        {orderToEdit?.otps && (
-          <div className="bg-slate-900 text-white p-3.5 rounded-xl border border-slate-800 space-y-2">
-            <div className="flex items-center gap-1.5 text-amber-400">
-              <Key className="w-3.5 h-3.5" />
-              <h5 className="text-[11px] font-bold uppercase tracking-wider">Handoff Verification Codes (OTPs)</h5>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-              <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
-                <p className="text-[10px] text-slate-400">Customer Pickup</p>
-                <p className="font-mono font-bold text-blue-400 text-sm mt-0.5">{orderToEdit.otps.customerPickup || '••••'}</p>
-                {orderToEdit.otps.customerPickup && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyOtp(orderToEdit.otps!.customerPickup!, 'Customer Pickup OTP')}
-                    className="text-[10px] text-slate-400 hover:text-white mt-1 underline"
-                  >
-                    {copiedOtp === 'Customer Pickup OTP' ? 'Copied ✓' : 'Copy'}
-                  </button>
-                )}
-              </div>
-              <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
-                <p className="text-[10px] text-slate-400">Vendor Drop</p>
-                <p className="font-mono font-bold text-indigo-400 text-sm mt-0.5">{orderToEdit.otps.vendorDrop || '••••'}</p>
-                {orderToEdit.otps.vendorDrop && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyOtp(orderToEdit.otps!.vendorDrop!, 'Vendor Drop OTP')}
-                    className="text-[10px] text-slate-400 hover:text-white mt-1 underline"
-                  >
-                    {copiedOtp === 'Vendor Drop OTP' ? 'Copied ✓' : 'Copy'}
-                  </button>
-                )}
-              </div>
-              <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
-                <p className="text-[10px] text-slate-400">Vendor Handover</p>
-                <p className="font-mono font-bold text-purple-400 text-sm mt-0.5">{orderToEdit.otps.vendorHandover || '••••'}</p>
-                {orderToEdit.otps.vendorHandover && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyOtp(orderToEdit.otps!.vendorHandover!, 'Vendor Handover OTP')}
-                    className="text-[10px] text-slate-400 hover:text-white mt-1 underline"
-                  >
-                    {copiedOtp === 'Vendor Handover OTP' ? 'Copied ✓' : 'Copy'}
-                  </button>
-                )}
-              </div>
-              <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
-                <p className="text-[10px] text-slate-400">Customer Delivery</p>
-                <p className="font-mono font-bold text-emerald-400 text-sm mt-0.5">{orderToEdit.otps.customerDelivery || '••••'}</p>
-                {orderToEdit.otps.customerDelivery && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyOtp(orderToEdit.otps!.customerDelivery!, 'Customer Delivery OTP')}
-                    className="text-[10px] text-slate-400 hover:text-white mt-1 underline"
-                  >
-                    {copiedOtp === 'Customer Delivery OTP' ? 'Copied ✓' : 'Copy'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </form>
     </Modal>
   );
