@@ -49,11 +49,12 @@ export default function Customers() {
         numOnly.includes(q);
 
       const matchesStatus =
-        selectedStatus === 'All' ||
-        (selectedStatus === 'Active' && customer.status === 'Active') ||
-        (selectedStatus === 'VIP' && customer.status === 'VIP') ||
-        (selectedStatus === 'Suspended' && customer.status === 'Suspended') ||
-        (selectedStatus === 'Inactive' && customer.status === 'Inactive');
+        selectedStatus === 'All'
+          ? customer.status !== 'Inactive' && customer.status !== 'Suspended'
+          : (selectedStatus === 'Active' && customer.status === 'Active') ||
+            (selectedStatus === 'VIP' && customer.status === 'VIP') ||
+            (selectedStatus === 'Suspended' && customer.status === 'Suspended') ||
+            (selectedStatus === 'Inactive' && customer.status === 'Inactive');
 
       return matchesSearch && matchesStatus;
     });

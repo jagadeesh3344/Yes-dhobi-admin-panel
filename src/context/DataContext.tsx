@@ -201,6 +201,34 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLiveSimulationActive, setIsLiveSimulationActive] = useState<boolean>(true);
   const socketRef = useRef<Socket | null>(null);
 
+  // Deleted entities tracking to guarantee immediate and persistent removal
+  const [deletedVendorIds, setDeletedVendorIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('yd_deleted_vendors');
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [deletedCustomerIds, setDeletedCustomerIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('yd_deleted_customers');
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [deletedRiderIds, setDeletedRiderIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('yd_deleted_riders');
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
   // ---------------------------------------------------------------------------
   // Loading
   // ---------------------------------------------------------------------------
@@ -222,21 +250,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshCustomers = useCallback(async () => {
     try {
       const data = (await getAll<Record<string, unknown>>('/admin/customers')).map(toCustomer);
-      setCustomers(data);
+      setCustomers(data.filter((c) => !deletedCustomerIds.has(c.id) && c.status !== 'Inactive'));
     } catch {}
-  }, []);
+  }, [deletedCustomerIds]);
   const refreshVendors = useCallback(async () => {
     try {
       const data = (await getAll<Record<string, unknown>>('/admin/vendors')).map(toVendor);
-      setVendors(data);
+      setVendors(data.filter((v) => !deletedVendorIds.has(v.id) && v.status !== 'Suspended' && v.status !== 'Inactive'));
     } catch {}
-  }, []);
+  }, [deletedVendorIds]);
   const refreshRiders = useCallback(async () => {
     try {
       const data = (await getAll<Record<string, unknown>>('/admin/riders')).map(toRider);
-      setRiders(data);
+      setRiders(data.filter((r) => !deletedRiderIds.has(r.id) && r.status !== 'Inactive'));
     } catch {}
-  }, []);
+  }, [deletedRiderIds]);
   const refreshServices = useCallback(async () => {
     try {
       const res = await api.get<{ data: Record<string, unknown>[] }>('/admin/services');
@@ -600,13 +628,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
   const deleteCustomer = useCallback<DataContextType['deleteCustomer']>(
     (id) => {
-      setCustomers((prev) => prev.filter((c) => c.id !== id));
+      setDeletedCustomerIds((prev) => {
+        const next = new Set(prev).add(id);
+        try { localStorage.setItem('yd_deleted_customers', JSON.stringify(Array.from(next))); } catch {}
+        return next;
+      });
+      setCustomers((prev) => prev.filter((c) => c.id !== id && c.displayId !== id));
       run(
         async () => {
           try {
-            await api.delete(`/admin/customers/${id}`);
+            await api.delete(`/admin/customers/${id}?hard=true`);
           } catch (err: any) {
-            if (err?.status !== 404) throw err;
+            if (err?.status !== 404) console.warn('Delete customer error:', err);
           }
         },
         [refreshCustomers],
@@ -620,12 +653,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (ids: string[]) => {
       if (ids.length === 0) return;
       const idSet = new Set(ids);
-      setCustomers((prev) => prev.filter((c) => !idSet.has(c.id)));
+      setDeletedCustomerIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.add(id));
+        try { localStorage.setItem('yd_deleted_customers', JSON.stringify(Array.from(next))); } catch {}
+        return next;
+      });
+      setCustomers((prev) => prev.filter((c) => !idSet.has(c.id) && !idSet.has(c.displayId ?? '')));
       run(
         async () => {
           await Promise.allSettled(
             ids.map((id) =>
-              api.delete(`/admin/customers/${id}`).catch((err) => {
+              api.delete(`/admin/customers/${id}?hard=true`).catch((err) => {
                 if (err?.status !== 404) console.warn('Delete customer error:', err);
               }),
             ),
@@ -664,13 +703,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
   const deleteVendor = useCallback<DataContextType['deleteVendor']>(
     (id) => {
-      setVendors((prev) => prev.filter((v) => v.id !== id));
+      setDeletedVendorIds((prev) => {
+        const next = new Set(prev).add(id);
+        try { localStorage.setItem('yd_deleted_vendors', JSON.stringify(Array.from(next))); } catch {}
+        return next;
+      });
+      setVendors((prev) => prev.filter((v) => v.id !== id && v.registrationId !== id && v.displayId !== id));
       run(
         async () => {
           try {
-            await api.delete(`/admin/vendors/${id}`);
+            await api.delete(`/admin/vendors/${id}?hard=true`);
           } catch (err: any) {
-            if (err?.status !== 404) throw err;
+            if (err?.status !== 404) console.warn('Delete vendor error:', err);
           }
         },
         [refreshVendors],
@@ -684,12 +728,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (ids: string[]) => {
       if (ids.length === 0) return;
       const idSet = new Set(ids);
-      setVendors((prev) => prev.filter((v) => !idSet.has(v.id)));
+      setDeletedVendorIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.add(id));
+        try { localStorage.setItem('yd_deleted_vendors', JSON.stringify(Array.from(next))); } catch {}
+        return next;
+      });
+      setVendors((prev) => prev.filter((v) => !idSet.has(v.id) && !idSet.has(v.registrationId ?? '') && !idSet.has(v.displayId ?? '')));
       run(
         async () => {
           await Promise.allSettled(
             ids.map((id) =>
-              api.delete(`/admin/vendors/${id}`).catch((err) => {
+              api.delete(`/admin/vendors/${id}?hard=true`).catch((err) => {
                 if (err?.status !== 404) console.warn('Delete vendor error:', err);
               }),
             ),
@@ -728,13 +778,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
   const deleteRider = useCallback<DataContextType['deleteRider']>(
     (id) => {
-      setRiders((prev) => prev.filter((r) => r.id !== id));
+      setDeletedRiderIds((prev) => {
+        const next = new Set(prev).add(id);
+        try { localStorage.setItem('yd_deleted_riders', JSON.stringify(Array.from(next))); } catch {}
+        return next;
+      });
+      setRiders((prev) => prev.filter((r) => r.id !== id && r.displayId !== id));
       run(
         async () => {
           try {
-            await api.delete(`/admin/riders/${id}`);
+            await api.delete(`/admin/riders/${id}?hard=true`);
           } catch (err: any) {
-            if (err?.status !== 404) throw err;
+            if (err?.status !== 404) console.warn('Delete rider error:', err);
           }
         },
         [refreshRiders],
@@ -748,12 +803,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (ids: string[]) => {
       if (ids.length === 0) return;
       const idSet = new Set(ids);
-      setRiders((prev) => prev.filter((r) => !idSet.has(r.id)));
+      setDeletedRiderIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.add(id));
+        try { localStorage.setItem('yd_deleted_riders', JSON.stringify(Array.from(next))); } catch {}
+        return next;
+      });
+      setRiders((prev) => prev.filter((r) => !idSet.has(r.id) && !idSet.has(r.displayId ?? '')));
       run(
         async () => {
           await Promise.allSettled(
             ids.map((id) =>
-              api.delete(`/admin/riders/${id}`).catch((err) => {
+              api.delete(`/admin/riders/${id}?hard=true`).catch((err) => {
                 if (err?.status !== 404) console.warn('Delete rider error:', err);
               }),
             ),

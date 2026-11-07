@@ -60,10 +60,11 @@ export default function Riders() {
         (selectedVehicle === 'Van' && rider.vehicle === 'Van');
 
       const matchesStatus =
-        selectedStatus === 'All' ||
-        (selectedStatus === 'Available' && (rider.status === 'Online' || rider.status === 'Available')) ||
-        (selectedStatus === 'On Delivery' && rider.status === 'On Delivery') ||
-        (selectedStatus === 'Offline' && rider.status === 'Offline');
+        selectedStatus === 'All'
+          ? rider.status !== 'Inactive'
+          : (selectedStatus === 'Available' && (rider.status === 'Online' || rider.status === 'Available')) ||
+            (selectedStatus === 'On Delivery' && rider.status === 'On Delivery') ||
+            (selectedStatus === 'Offline' && rider.status === 'Offline');
 
       const matchesZone = selectedZone === 'All' || rider.zone.toLowerCase().includes(selectedZone.toLowerCase());
 

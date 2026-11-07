@@ -57,11 +57,12 @@ export default function Vendors() {
         vendor.location.toLowerCase().includes(selectedZone.toLowerCase());
 
       const matchesStatus =
-        selectedStatus === 'All' ||
-        (selectedStatus === 'Active' && vendor.status === 'Active') ||
-        (selectedStatus === 'Pending' && vendor.status === 'Pending Verification') ||
-        (selectedStatus === 'Suspended' && vendor.status === 'Suspended') ||
-        (selectedStatus === 'Inactive' && vendor.status === 'Inactive');
+        selectedStatus === 'All'
+          ? vendor.status !== 'Suspended' && vendor.status !== 'Inactive'
+          : (selectedStatus === 'Active' && vendor.status === 'Active') ||
+            (selectedStatus === 'Pending' && vendor.status === 'Pending Verification') ||
+            (selectedStatus === 'Suspended' && vendor.status === 'Suspended') ||
+            (selectedStatus === 'Inactive' && vendor.status === 'Inactive');
 
       return matchesSearch && matchesZone && matchesStatus;
     });
